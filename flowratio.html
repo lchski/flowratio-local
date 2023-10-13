@@ -32,7 +32,7 @@
                              type: 'text',
                              id: 'timebox',
                              disabled: futurePing,
-                             value: futurePing ? 'PENDING' : futurePing,
+                             value: futurePing ? 'PENDING' : pingTime,
                          }, []),
                      ]),
                      h('li', null, [
@@ -61,7 +61,14 @@
              const [samples, setSamples] = useState(
                  List(JSON.parse(window.localStorage.getItem(KEY)))
              );
-             const [pingTime, setPingTime] = useState(dayjs().add(15, 'minutes'));
+             const [pingTime, setPingTime] = useState(dayjs().add(10, 'seconds'));
+             const [currentTime, setCurrentTime] = useState(dayjs());
+
+             useEffect(() => {
+                 window.setTimeout(() => {
+                     setCurrentTime(dayjs());
+                 }, 1000);
+             }, [currentTime]);
 
              const addSample = (time, tag) => {
                  console.log('storing again');
@@ -75,6 +82,7 @@
              }, [samples]);
 
              return h('main', null, [
+                 h('p', null, ['Time ' + currentTime]),
                  h(SampleForm, { pingTime, addSample }),
                  h(ShowHistory, { samples })
              ])
