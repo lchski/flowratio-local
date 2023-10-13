@@ -8,60 +8,87 @@
         <div id="app">Loading...</div>
         <script type="module">
          import { h, render, createContext } from 'https://unpkg.com/preact@latest?module';
-         import { useState, useEffect } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
+         import { useState, useEffect, useRef } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
          import { List } from 'https://unpkg.com/immutable@latest?module';
          import dayjs from 'https://cdn.skypack.dev/dayjs';
 
          const KEY = 'fr_samples';
+         const LAMBDA = 2;  // Average number of seconds between pings.
+         const AFK = 10;  // Timeout on pings.
 
-         function SampleForm({ pingTime, addSample }) {
-             const [tagString, setTagString] = useState('');
-             const handleSubmit = event => {
-                 event.preventDefault();
+         function SampleForm({ pingTime, currentTime, addSample }) {
+             const [tagString, setTagString] = useState("woho");
+
+             // Record sample on submission.
+             const handleSubmit = (event, tagString) => {
+                 event?.preventDefault();
                  addSample(pingTime, tagString);
-                 setTagString("");
              };
 
-             const futurePing = pingTime > dayjs();
+             // Auto-record "afk" when no answer.
+             useEffect(() => {
+                 if (currentTime > pingTime.add(AFK, 'seconds')) {
+                     handleSubmit(null, 'afk');
+                 }
+             });
 
-             return h('form', { onSubmit: handleSubmit }, [
-                 h('ul', null, [
-                     h('li', null, [
-                         h('label', { for: 'timebox' }, ['Time']),
-                         h('input', {
-                             type: 'text',
-                             id: 'timebox',
-                             disabled: futurePing,
-                             value: futurePing ? 'PENDING' : pingTime,
-                         }, []),
-                     ]),
-                     h('li', null, [
-                         h('label', { for: 'tagbox' }, ['Tag']),
-                         h('input', {
-                             type: 'text',
-                             id: 'tagbox',
-                             value: tagString,
-                             onChange: ev => setTagString(ev.target.value)
-                         }, [ ]),
-                     ]),
-                     h('li', null, [
-                         h('button', { type: 'submit'  }, ['Enter'])
-                     ]),
-                 ])
-             ]);
+             // Autofocus tag input.
+             const tagInput = useRef(null);
+             useEffect(() => {
+                 tagInput.current?.focus();
+             }, [ currentTime ]);
+             const handleFocus = event => {
+                 event.target.select();
+             };
+
+             if (pingTime > currentTime) {
+                 return h('p', null, [
+                     'PENDING'
+                 ]);
+             } else {
+                 return h('form', { onSubmit: ev => handleSubmit(ev, tagString) }, [
+                     h('ul', null, [
+                         h('li', null, [
+                             h('label', { for: 'timebox' }, ['Time']),
+                             h('input', {
+                                 type: 'text',
+                                 id: 'timebox',
+                                 disabled: true,
+                                 value: pingTime.format(),
+                             }, []),
+                         ]),
+                         h('li', null, [
+                             h('label', { for: 'tagbox' }, ['Tag']),
+                             h('input', {
+                                 type: 'text',
+                                 id: 'tagbox',
+                                 ref: tagInput,
+                                 value: tagString,
+                                 onInput: ev => setTagString(ev.target.value),
+                                 onFocus: handleFocus,
+                             }, [ ]),
+                         ]),
+                         h('li', null, [
+                             h('button', { type: 'submit'  }, ['Enter'])
+                         ]),
+                     ])
+                 ]);
+             }
          }
 
          function ShowHistory({ samples }) {
              return h('ul', null, [
-                 ...samples.map(s => h('li', null, [s.time + ' ' + s.tag]))
+                 ...samples.map(s => h('li', null, [s.time.format() + ' ' + s.tag]))
              ])
          }
 
          function App() {
              const [samples, setSamples] = useState(
-                 List(JSON.parse(window.localStorage.getItem(KEY)))
+                 List(JSON.parse(window.localStorage.getItem(KEY)).map(s => {
+                     return { ...s, time: dayjs(s.time)};
+                 }))
              );
-             const [pingTime, setPingTime] = useState(dayjs().add(10, 'seconds'));
+             const [pingTime, setPingTime] = useState(dayjs().add(LAMBDA, 'seconds'));
              const [currentTime, setCurrentTime] = useState(dayjs());
 
              useEffect(() => {
@@ -71,22 +98,22 @@
              }, [currentTime]);
 
              const addSample = (time, tag) => {
-                 console.log('storing again');
                  setSamples(samples.unshift({time, tag }));
                  console.log(samples);
+                 setPingTime(dayjs().add(LAMBDA, 'seconds'));
              };
 
              useEffect(() => {
-                 console.log('storing');
                  window.localStorage.setItem(KEY, JSON.stringify(samples))
              }, [samples]);
 
              return h('main', null, [
-                 h('p', null, ['Time ' + currentTime]),
-                 h(SampleForm, { pingTime, addSample }),
+                 h('p', null, ['Time ' + currentTime.format()]),
+                 h(SampleForm, { pingTime, currentTime, addSample }),
                  h(ShowHistory, { samples })
              ])
          }
+
          window.localStorage.setItem(KEY, JSON.stringify([
          ]));
 
