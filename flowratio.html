@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+        <title>FlowRatio Tracker</title>
+    </head>
+    <body>
+        <div id="app">Loading...</div>
+        <script type="module">
+         import { h, render, createContext } from 'https://unpkg.com/preact@latest?module';
+         import { useState, useEffect } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
+         import { List } from 'https://unpkg.com/immutable@latest?module';
+         import dayjs from 'https://cdn.skypack.dev/dayjs';
+
+         const KEY = 'fr_samples';
+
+         function SampleForm({ pingTime, addSample }) {
+             const [tagString, setTagString] = useState('');
+             const handleSubmit = event => {
+                 event.preventDefault();
+                 addSample(pingTime, tagString);
+                 setTagString("");
+             };
+
+             const futurePing = pingTime > dayjs();
+
+             return h('form', { onSubmit: handleSubmit }, [
+                 h('ul', null, [
+                     h('li', null, [
+                         h('label', { for: 'timebox' }, ['Time']),
+                         h('input', {
+                             type: 'text',
+                             id: 'timebox',
+                             disabled: futurePing,
+                             value: futurePing ? 'PENDING' : futurePing,
+                         }, []),
+                     ]),
+                     h('li', null, [
+                         h('label', { for: 'tagbox' }, ['Tag']),
+                         h('input', {
+                             type: 'text',
+                             id: 'tagbox',
+                             value: tagString,
+                             onChange: ev => setTagString(ev.target.value)
+                         }, [ ]),
+                     ]),
+                     h('li', null, [
+                         h('button', { type: 'submit'  }, ['Enter'])
+                     ]),
+                 ])
+             ]);
+         }
+
+         function ShowHistory({ samples }) {
+             return h('ul', null, [
+                 ...samples.map(s => h('li', null, [s.time + ' ' + s.tag]))
+             ])
+         }
+
+         function App() {
+             const [samples, setSamples] = useState(
+                 List(JSON.parse(window.localStorage.getItem(KEY)))
+             );
+             const [pingTime, setPingTime] = useState(dayjs().add(15, 'minutes'));
+
+             const addSample = (time, tag) => {
+                 console.log('storing again');
+                 setSamples(samples.unshift({time, tag }));
+                 console.log(samples);
+             };
+
+             useEffect(() => {
+                 console.log('storing');
+                 window.localStorage.setItem(KEY, JSON.stringify(samples))
+             }, [samples]);
+
+             return h('main', null, [
+                 h(SampleForm, { pingTime, addSample }),
+                 h(ShowHistory, { samples })
+             ])
+         }
+         window.localStorage.setItem(KEY, JSON.stringify([
+         ]));
+
+         const appDiv = document.getElementById('app');
+         appDiv.removeChild(appDiv.childNodes[0]);
+         render(h(App, null), appDiv);
+
+         /* if (window.Notification.permission !== 'granted') {
+          *     window.Notification.requestPermission()
+          *           .then(p => {
+          *               if (p === 'granted') {
+          *                   console.log('woop');
+          *               } else {
+          *                   console.log('nooes');
+          *               }
+          *           });
+          * }
+          * await new Promise(r => setTimeout(r, 2000));
+          * let noti = new window.Notification('hello thar'); */
+        </script>
+    </body>
+</html>
