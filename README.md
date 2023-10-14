@@ -31,7 +31,8 @@ I think these are needed to reach the dangerous dogfooding point.
 
 - [x] Show notification when pinging
 - [x] Randomise interval between pings
-- [ ] Import/export targeting CSV
+- [x] Export to JSON
+- [ ] Change export to CSV
 - [ ] Autodetect when running again after sleep, closed tab, etc. Add "off" tagged
   Off means flowratio was off, not anything else. This can be accomplished
   practically by storing the time for the next ping in localstorage and then if
@@ -42,6 +43,7 @@ I think these are needed to reach the dangerous dogfooding point.
 
 #### Nice-to-haves
 
+- [ ] Import from CSV
 - [ ] Summarise the data at least a little bit
 - [ ] Autocomplete when typing
 

@@ -3,6 +3,11 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
         <title>FlowRatio Tracker</title>
+        <style>
+         .tagform {
+           height: 10rem;
+         }
+        </style>
     </head>
     <body>
         <div id="app">Loading...</div>
@@ -55,11 +60,11 @@
              };
 
              if (! currentPing) {
-                 return h('p', null, [
+                 return h('div', { class: 'tagform' }, [
                      'PENDING'
                  ]);
              } else {
-                 return h('form', { onSubmit: ev => handleSubmit(ev, tagString) }, [
+                 return h('form', { class: 'tagform', onSubmit: ev => handleSubmit(ev, tagString) }, [
                      h('ul', null, [
                          h('li', null, [
                              h('label', { for: 'timebox' }, ['Time']),
@@ -89,10 +94,15 @@
              }
          }
 
-         function ShowHistory({ samples }) {
-             return h('ul', null, [
-                 ...samples.map(s => h('li', null, [s.time.format() + ' ' + s.tag]))
-             ])
+         function ShowHistory({ csv, samples }) {
+             return h('div', null, [
+                 h('p', null, 'CSV: '),
+                 h('button', { onClick: csv.export }, [ 'Export' ]),
+                 h('button', { onClick: csv.import }, [ 'Import' ]),
+                 h('ul', null, [
+                     ...samples.map(s => h('li', null, [s.time.format() + ' ' + s.tag]))
+                 ])
+             ]);
          }
 
          function App() {
@@ -158,6 +168,24 @@
                  setSamples(moreSamples);
                  setNextPing(time);
              };
+             const csv = {
+                 export: () => {
+                     const data = new Blob([JSON.stringify(getSamples())], {type: 'text/plain'});
+                     const a = document.createElement('a');
+                     const url = window.URL.createObjectURL(data);
+                     a.href = url;
+                     a.download = 'flowratio.json';
+                     document.body.appendChild(a);
+                     a.click();
+                     setTimeout(() => {
+                         document.body.removeChild(a);
+                         window.URL.revokeObjectURL(url);
+                     });
+                 },
+                 import: () => {
+                     alert('Not implemented');
+                 },
+             };
 
 
              // Manage ping notification.
@@ -188,23 +216,19 @@
                  return h('main', null, [
                      h('p', null, ['Time ' + currentTime.format()]),
                      h(SampleForm, { currentPing, currentTime, addSample }),
-                     h(ShowHistory, { samples })
+                     h(ShowHistory, { csv, samples })
                  ]);
              }
          }
 
          // Clear out local storage when testing during development.
-         window.localStorage.setItem('fr_samples', JSON.stringify([
-         ]));
+         if (DEV) {
+             window.localStorage.setItem('fr_samples', JSON.stringify([]));
+         }
 
          const appDiv = document.getElementById('app');
          appDiv.removeChild(appDiv.childNodes[0]);
          render(h(App, null), appDiv);
-
-         /*
-          * await new Promise(r => setTimeout(r, 2000));
-          * let noti =
-          */
         </script>
     </body>
 </html>
