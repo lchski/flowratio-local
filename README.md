@@ -49,6 +49,10 @@ I think these are needed to reach the dangerous dogfooding point.
 - [ ] Give user ability to clear out log (or otherwise clean it up?) – the user
       can do this by means of export/import
 
+### Apparent bugs
+
+- [ ] Notification disappears after a brief while, despite requireInteraction:
+      true – why is that? I'd prefer it to time out with the afk auto-submission.
 
 ### Latent bugs
 
