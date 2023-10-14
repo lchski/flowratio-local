@@ -117,16 +117,21 @@
 
 
              // Manage next ping time.
-             const [pingTime, setPingTime] = useState(null);
-             const setNextPing = (prevPing) => {
+             const [pingTime, setPingTime] = useState(
+                 () => window.localStorage.getItem('fr_nextping')
+             );
+             const setNextPing = (prevPing, currentTime) => {
                  let nextPing = prevPing.add(rexp(), 'seconds');
                  // If the next ping happened while a current ping was entered,
                  // automatically record it as a flowratio ping and generate a
                  // fresh ping.
-                 if (nextPing > dayjs().add(1, 'seconds')) {
+                 if (nextPing > currentTime.add(1, 'seconds')) {
+                     window.localStorage.setItem('fr_nextping', nextPing.format());
                      setPingTime(nextPing);
                  } else {
-                     // HUH! This is a cyclic dependency. Does not seem like JS cares.
+                     // JS does not seem to care about this cyclic dependency
+                     // between setNextPing and addSample.
+                     //
                      // Add a sample for entering tags, which will ensure a new
                      // ping time is set also.
                      addSample(nextPing, 'flowratio');
@@ -134,14 +139,15 @@
              }
 
 
-             // Manage current time.
+             // Manage current time. This is the only code that should call
+             // dayjs. Everything else should use currentTime.
              const [currentTime, setCurrentTime] = useState(dayjs());
              useEffect(() => {
                  window.setTimeout(() => {
                      setCurrentTime(dayjs());
                      // Make sure we have a ping time when running.
                      if (notifyAllowed && ! pingTime) {
-                         setNextPing(dayjs());
+                         setNextPing(dayjs(), dayjs());
                      }
                  }, 1000/REFRESH_RATE);
              }, [currentTime]);
@@ -166,7 +172,7 @@
                  const moreSamples = getSamples().unshift({time, tag });
                  window.localStorage.setItem('fr_samples', JSON.stringify(moreSamples));
                  setSamples(moreSamples);
-                 setNextPing(time);
+                 setNextPing(time, currentTime);
              };
              const csv = {
                  export: () => {
