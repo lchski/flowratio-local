@@ -14,11 +14,35 @@ http://doc.beeminder.com/tagtime
 
 ## Todo
 
+
+### Features
+
+#### Bare minimum
+
+I think these are needed to reach the dangerous dogfooding point.
+
 - [ ] Show notification when pinging
-- [ ] Autodetect when running again after sleep
-- [ ] Autodetect when starting again tab has been closed for a long time (and do
-      what? Ask user to fill in afk or ignore?)
 - [ ] Randomise interval between pings
+- [ ] Import/export targeting CSV
+- [ ] Autodetect when running again after sleep, closed tab, etc. Add "off" tagged
+   (practically, if the time since the last ping is "long", add T/n "off"
+   samples.) Off means flowratio was off, not anything else.
+
+#### Nice-to-haves
+
 - [ ] Summarise the data at least a little bit
-- [ ] Give user ability to clear out log
 - [ ] Autocomplete when typing
+
+#### Advanced features unlikely to happen
+
+- [ ] Give user ability to clear out log (or otherwise clean it up?) – the user
+      can do this by means of export/import
+
+
+### Latent bugs
+
+- [ ] Set some sort of mutex in local storage that prevents two flowratio tabs
+      from being active at the same time. Maybe just have a random id generated
+      on page load, and store that as the active tab in localstorage. Each
+      second, read from localstorage and ensure this tab is still active.
+      Otherwise blank out and ask user to refresh to reset to this tab.
