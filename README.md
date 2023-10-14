@@ -55,6 +55,8 @@ I think these are needed to reach the dangerous dogfooding point.
 ### Apparent bugs
 
 - [x] When AFK, it gets into an infinite loop somehow
+- [ ] Fan speed goes up when using – caught in rerendering loop or just tired
+      computer?
 - [ ] Notification disappears after a brief while, despite requireInteraction:
       true – why is that? I'd prefer it to time out with the afk auto-submission.
 
