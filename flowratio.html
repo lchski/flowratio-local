@@ -12,9 +12,20 @@
          import { List } from 'https://unpkg.com/immutable@latest?module';
          import dayjs from 'https://cdn.skypack.dev/dayjs';
 
-         const KEY = 'fr_samples';
-         const LAMBDA = 2;  // Average number of seconds between pings.
-         const AFK = 10;  // Timeout on pings.
+         const DEV = new URLSearchParams(window.location.search).get('dev') === '1';
+         if (DEV) {
+             console.log('Running in development mode with more aggressive constants.');
+         }
+
+         const LAMBDA = DEV ? 10 : 45*60;  // Average number of seconds between pings.
+         const AFK = DEV ? 10 : 60;  // Timeout on pings.
+         const REFRESH_RATE = 1;  // Per second.
+
+         const rexp = () => {
+             // This is not strictly uniform in (0,1) but close enough.
+             const u = Math.max(Number.EPSILON, Math.random());
+             return -Math.log(u) * LAMBDA;
+         };
 
          function SampleForm({ currentPing, currentTime, addSample }) {
              const [tagString, setTagString] = useState("woho");
@@ -32,7 +43,7 @@
                  if (currentPing && currentTime > currentPing.add(AFK, 'seconds')) {
                      addSample(currentPing, 'afk');
                  }
-             });
+             }, [currentTime, currentPing]);
 
              // Autofocus tag input.
              const tagInput = useRef(null);
@@ -85,11 +96,49 @@
          }
 
          function App() {
+
+             // Manage notification permissions.
              const requestNotify = () => {
                  window.Notification.requestPermission()
                        .then(p => setNotifyAllowed(p === 'granted'));
              };
+             const [notifyAllowed, setNotifyAllowed] =
+                 useState(window.Notification.permission === 'granted');
 
+
+             // Manage next ping time.
+             const [pingTime, setPingTime] = useState(null);
+             const setNextPing = (prevPing) => {
+                 let nextPing = prevPing.add(rexp(), 'seconds');
+                 // If the next ping happened while a current ping was entered,
+                 // automatically record it as a flowratio ping and generate a
+                 // fresh ping.
+                 if (nextPing > dayjs().add(1, 'seconds')) {
+                     setPingTime(nextPing);
+                 } else {
+                     // HUH! This is a cyclic dependency. Does not seem like JS cares.
+                     // Add a sample for entering tags, which will ensure a new
+                     // ping time is set also.
+                     addSample(nextPing, 'flowratio');
+                 }
+             }
+
+
+             // Manage current time.
+             const [currentTime, setCurrentTime] = useState(dayjs());
+             useEffect(() => {
+                 window.setTimeout(() => {
+                     setCurrentTime(dayjs());
+                     // Make sure we have a ping time when running.
+                     if (notifyAllowed && ! pingTime) {
+                         setNextPing(dayjs());
+                     }
+                 }, 1000/REFRESH_RATE);
+             }, [currentTime]);
+
+
+             // Manage samples.
+             //
              // Read samples from localStorage on page load and every time they
              // are modified. Only ever append to localStorage to avoid
              // clobbering a second tab if one happens to be running.
@@ -98,43 +147,27 @@
              // called within `addSample`, so that the local samples state
              // and the localStorage samples do not diverge.
              const getSamples = () => {
-                 return List(JSON.parse(window.localStorage.getItem(KEY)).map(s => {
+                 return List(JSON.parse(window.localStorage.getItem('fr_samples')).map(s => {
                      return { ...s, time: dayjs(s.time)};
                  }));
              };
              const [samples, setSamples] = useState(getSamples);
              const addSample = (time, tag) => {
                  const moreSamples = getSamples().unshift({time, tag });
-                 window.localStorage.setItem(KEY, JSON.stringify(moreSamples));
+                 window.localStorage.setItem('fr_samples', JSON.stringify(moreSamples));
                  setSamples(moreSamples);
-                 setPingTime(dayjs().add(LAMBDA, 'seconds'));
+                 setNextPing(time);
              };
 
-             const [pingTime, setPingTime] = useState(null);
-             const [currentTime, setCurrentTime] = useState(dayjs());
-             const [notifyAllowed, setNotifyAllowed] =
-                 useState(window.Notification.permission === 'granted');
 
-             useEffect(() => {
-                 window.setTimeout(() => {
-                     setCurrentTime(dayjs());
-                     // Make sure we have a ping time when running.
-                     if (notifyAllowed && ! pingTime) {
-                         setPingTime(dayjs().add(LAMBDA, 'seconds'));
-                     }
-                 }, 1000);
-             }, [currentTime]);
-
+             // Manage ping notification.
              const currentPing = pingTime > currentTime ? null : pingTime;
              const [pingNotification, setPingNotification] = useState(null);
-
              useEffect(() => {
                  if (!pingNotification && currentPing) {
                      setPingNotification(new window.Notification(
                          'Snap read!', {
                              body: 'Click to tag what you are doing.',
-                             tag: currentPing,
-                             renotify: true,
                              requireInteraction: true,
                          }
                      ));
@@ -144,6 +177,8 @@
                  }
              }, [currentPing]);
 
+
+             // Render application contents.
              if (! notifyAllowed) {
                  return h('main', null, [
                      h('p', null, ['This app (by its nature) does not work without notifications.']),
@@ -158,7 +193,8 @@
              }
          }
 
-         window.localStorage.setItem(KEY, JSON.stringify([
+         // Clear out local storage when testing during development.
+         window.localStorage.setItem('fr_samples', JSON.stringify([
          ]));
 
          const appDiv = document.getElementById('app');

@@ -14,12 +14,11 @@ http://doc.beeminder.com/tagtime
 
 ## Running
 
-Open the HTML file in a browser and it should work. But warning: the constants
-specifying how often to bug the user and how quickly to consider them AFK are
-currently very aggressive, to facilitate testing.
+Open the HTML file in a browser and it should work.
 
-Also it currently clears out the local storage every time it starts up (for the
-same reason) so don't rely on it to keep data for you yet.
+If using it for development and you want faster feedback, add ?dev=1 to the URL
+to (a) get much more aggressive time constants, and (b) have it clear out local
+storage on startup.
 
 ## Todo
 
@@ -31,13 +30,15 @@ same reason) so don't rely on it to keep data for you yet.
 I think these are needed to reach the dangerous dogfooding point.
 
 - [x] Show notification when pinging
-- [ ] Randomise interval between pings
+- [x] Randomise interval between pings
 - [ ] Import/export targeting CSV
 - [ ] Autodetect when running again after sleep, closed tab, etc. Add "off" tagged
-   (practically, if the time since the last ping is "long", add T/n "off"
-   samples.) Off means flowratio was off, not anything else.
-- [ ] Set sane default times
-- [ ] Stop clearing localstorage automatically
+  Off means flowratio was off, not anything else. This can be accomplished
+  practically by storing the time for the next ping in localstorage and then if
+  now is singificantly greater than nextping, it means the ping happened when
+  flowratio was unable to bug the user, i.e. "off"
+- [x] Set sane default times
+- [x] Stop clearing localstorage automatically
 
 #### Nice-to-haves
 
@@ -51,6 +52,7 @@ I think these are needed to reach the dangerous dogfooding point.
 
 ### Apparent bugs
 
+- [x] When AFK, it gets into an infinite loop somehow
 - [ ] Notification disappears after a brief while, despite requireInteraction:
       true – why is that? I'd prefer it to time out with the afk auto-submission.
 
@@ -61,6 +63,9 @@ I think these are needed to reach the dangerous dogfooding point.
       on page load, and store that as the active tab in localstorage. Each
       second, read from localstorage and ensure this tab is still active.
       Otherwise blank out and ask user to refresh to reset to this tab.
+- [ ] What happens if one desires to adjust lambda while using flowratio? Maybe
+      the lambda rate needs to be stored along with the ping time everywhere.
+      (That lets us translate the ping into "1/lambda minutes of work")
 
 ### Fun refactoring
 
