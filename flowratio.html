@@ -16,19 +16,21 @@
          const LAMBDA = 2;  // Average number of seconds between pings.
          const AFK = 10;  // Timeout on pings.
 
-         function SampleForm({ pingTime, currentTime, addSample }) {
+         function SampleForm({ currentPing, currentTime, addSample }) {
              const [tagString, setTagString] = useState("woho");
 
              // Record sample on submission.
              const handleSubmit = (event, tagString) => {
                  event?.preventDefault();
-                 addSample(pingTime, tagString);
+                 if (currentPing) {
+                     addSample(currentPing, tagString);
+                 }
              };
 
              // Auto-record "afk" when no answer.
              useEffect(() => {
-                 if (currentTime > pingTime.add(AFK, 'seconds')) {
-                     handleSubmit(null, 'afk');
+                 if (currentPing && currentTime > currentPing.add(AFK, 'seconds')) {
+                     addSample(currentPing, 'afk');
                  }
              });
 
@@ -36,12 +38,12 @@
              const tagInput = useRef(null);
              useEffect(() => {
                  tagInput.current?.focus();
-             }, [ currentTime ]);
+             }, [ currentPing ]);
              const handleFocus = event => {
                  event.target.select();
              };
 
-             if (pingTime > currentTime) {
+             if (! currentPing) {
                  return h('p', null, [
                      'PENDING'
                  ]);
@@ -54,7 +56,7 @@
                                  type: 'text',
                                  id: 'timebox',
                                  disabled: true,
-                                 value: pingTime.format(),
+                                 value: currentPing.format(),
                              }, []),
                          ]),
                          h('li', null, [
@@ -83,34 +85,77 @@
          }
 
          function App() {
-             const [samples, setSamples] = useState(
-                 List(JSON.parse(window.localStorage.getItem(KEY)).map(s => {
+             const requestNotify = () => {
+                 window.Notification.requestPermission()
+                       .then(p => setNotifyAllowed(p === 'granted'));
+             };
+
+             // Read samples from localStorage on page load and every time they
+             // are modified. Only ever append to localStorage to avoid
+             // clobbering a second tab if one happens to be running.
+             //
+             // In practise, this means `setSamples` is only allowed to be
+             // called within `addSample`, so that the local samples state
+             // and the localStorage samples do not diverge.
+             const getSamples = () => {
+                 return List(JSON.parse(window.localStorage.getItem(KEY)).map(s => {
                      return { ...s, time: dayjs(s.time)};
-                 }))
-             );
-             const [pingTime, setPingTime] = useState(dayjs().add(LAMBDA, 'seconds'));
+                 }));
+             };
+             const [samples, setSamples] = useState(getSamples);
+             const addSample = (time, tag) => {
+                 const moreSamples = getSamples().unshift({time, tag });
+                 window.localStorage.setItem(KEY, JSON.stringify(moreSamples));
+                 setSamples(moreSamples);
+                 setPingTime(dayjs().add(LAMBDA, 'seconds'));
+             };
+
+             const [pingTime, setPingTime] = useState(null);
              const [currentTime, setCurrentTime] = useState(dayjs());
+             const [notifyAllowed, setNotifyAllowed] =
+                 useState(window.Notification.permission === 'granted');
 
              useEffect(() => {
                  window.setTimeout(() => {
                      setCurrentTime(dayjs());
+                     // Make sure we have a ping time when running.
+                     if (notifyAllowed && ! pingTime) {
+                         setPingTime(dayjs().add(LAMBDA, 'seconds'));
+                     }
                  }, 1000);
              }, [currentTime]);
 
-             const addSample = (time, tag) => {
-                 setSamples(samples.unshift({time, tag }));
-                 setPingTime(dayjs().add(LAMBDA, 'seconds'));
-             };
+             const currentPing = pingTime > currentTime ? null : pingTime;
+             const [pingNotification, setPingNotification] = useState(null);
 
              useEffect(() => {
-                 window.localStorage.setItem(KEY, JSON.stringify(samples))
-             }, [samples]);
+                 if (!pingNotification && currentPing) {
+                     setPingNotification(new window.Notification(
+                         'Snap read!', {
+                             body: 'Click to tag what you are doing.',
+                             tag: currentPing,
+                             renotify: true,
+                             requireInteraction: true,
+                         }
+                     ));
+                 } else if (pingNotification && !currentPing) {
+                     pingNotification.close();
+                     setPingNotification(null);
+                 }
+             }, [currentPing]);
 
-             return h('main', null, [
-                 h('p', null, ['Time ' + currentTime.format()]),
-                 h(SampleForm, { pingTime, currentTime, addSample }),
-                 h(ShowHistory, { samples })
-             ])
+             if (! notifyAllowed) {
+                 return h('main', null, [
+                     h('p', null, ['This app (by its nature) does not work without notifications.']),
+                     h('button', { onClick: requestNotify }, [ 'Request notification permission ']),
+                 ]);
+             } else {
+                 return h('main', null, [
+                     h('p', null, ['Time ' + currentTime.format()]),
+                     h(SampleForm, { currentPing, currentTime, addSample }),
+                     h(ShowHistory, { samples })
+                 ]);
+             }
          }
 
          window.localStorage.setItem(KEY, JSON.stringify([
@@ -120,18 +165,10 @@
          appDiv.removeChild(appDiv.childNodes[0]);
          render(h(App, null), appDiv);
 
-         /* if (window.Notification.permission !== 'granted') {
-          *     window.Notification.requestPermission()
-          *           .then(p => {
-          *               if (p === 'granted') {
-          *                   console.log('woop');
-          *               } else {
-          *                   console.log('nooes');
-          *               }
-          *           });
-          * }
+         /*
           * await new Promise(r => setTimeout(r, 2000));
-          * let noti = new window.Notification('hello thar'); */
+          * let noti =
+          */
         </script>
     </body>
 </html>
