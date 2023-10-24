@@ -38,6 +38,7 @@ I think these are needed to reach the dangerous dogfooding point.
   practically by storing the time for the next ping in localstorage and then if
   now is singificantly greater than nextping, it means the ping happened when
   flowratio was unable to bug the user, i.e. "off"
+  - Autodetection in place, remains to be tested
 - [x] Set sane default times
 - [x] Stop clearing localstorage automatically
 
@@ -64,7 +65,7 @@ I think these are needed to reach the dangerous dogfooding point.
       auto-submission.
   - I think this might just be the GNOME notification system, because on
     Windows it persists until the afk auto-submission.
-- [ ] Subsequent prompts triggered when afk should be auto-tagged afk, not
+- [x] Subsequent prompts triggered when afk should be auto-tagged afk, not
       flowratio. That said, this is probably a low-prio bug since under
       realistic settings it will rarely happen. (But it does happen all the time
       under development, so it's easy to reproduce!)

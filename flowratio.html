@@ -117,34 +117,43 @@
 
 
              // Manage next ping time.
-             const [pingTime, setPingTime] = useState(
-                 () => window.localStorage.getItem('fr_nextping')
-             );
-             const setNextPing = (prevPing, currentTime) => {
+             const [pingTime, setPingTime] = useState(() => {
+                 const next = window.localStorage.getItem('fr_nextping');
+                 return next ? dayjs(next) : null;
+             });
+             const setNextPing = (prevSample, currentTime) => {
                  if (! notifyAllowed) {
                      setPingTime(null);
                  }
-                 // TODO: if prevping is in the past when we get here,
-                 // generate a bunch of "off" events in a loop.
 
-                 let nextPing = prevPing.add(rexp(), 'seconds');
-                 // If the next ping happened while a current ping was entered,
-                 // automatically record it as a flowratio ping and generate a
-                 // fresh ping.
-                 if (nextPing > currentTime.add(1, 'seconds')) {
-                     window.localStorage.setItem('fr_nextping', nextPing.format());
-                     setPingTime(nextPing);
-                 } else {
-                     // JS does not seem to care about this cyclic dependency
-                     // between setNextPing and addSample.
+                 let samplesToAdd = [prevSample];
+                 let nextPing = prevSample.time.add(rexp(), 'seconds');
+                 while (nextPing < currentTime.add(1, 'seconds')) {
+                     // If the next ping is still in the past, add another
+                     // missed ping.
                      //
-                     // Add a sample for entering tags, which will ensure a new
-                     // ping time is set also.
+                     // NOTE: Doing this in a loop is a very crude and
+                     // inefficient implementation. If the user starts
+                     // flowratio again after some months have passed
+                     // it will spin and generate a lot of pings.
                      //
-                     // TODO: Change this logic to bypass the regular addSample
-                     // so this can be called in a loop.
-                     addSample(nextPing, 'flowratio');
+                     // It would be neater  to record T/t pings being
+                     // missed, where T is time passed and t is time
+                     // implied by lambda.
+                     let nextTag = 'flowratio';
+                     if (prevSample.tag === 'off') {
+                         nextTag = 'off';
+                     } else if (prevSample.tag === 'afk') {
+                         nextTag = 'afk';
+                     }
+                     samplesToAdd.push({ time: nextPing, tag: nextTag });
+                     nextPing = nextPing.add(rexp(), 'seconds');
                  }
+                 addSamples(samplesToAdd);
+                 // Once we're out of the loop, we have arrived at a future
+                 // ping.
+                 window.localStorage.setItem('fr_nextping', nextPing.format());
+                 setPingTime(nextPing);
              }
 
 
@@ -154,9 +163,13 @@
              useEffect(() => {
                  window.setTimeout(() => {
                      setCurrentTime(dayjs());
-                     // Make sure we have a ping time when running.
                      if (notifyAllowed && ! pingTime) {
-                         setNextPing(dayjs(), dayjs());
+                         // Make sure we have a ping time when running.
+                         setNextPing({ time: dayjs(), tag: null }, dayjs());
+                     } else if (pingTime.add(2*AFK, 'seconds') < currentTime) {
+                         // If ping time is more than twice AFK in the past,
+                         // assume flowratio was off.
+                         setNextPing({ time: pingTime, tag: 'off' }, dayjs());
                      }
                  }, 1000/REFRESH_RATE);
              }, [currentTime]);
@@ -177,12 +190,22 @@
                  }));
              };
              const [samples, setSamples] = useState(getSamples);
+             // This function is starting to look unnecessary...
              const addSample = (time, tag) => {
-                 const moreSamples = getSamples().unshift({ time, tag });
-                 window.localStorage.setItem('fr_samples', JSON.stringify(moreSamples));
-                 setSamples(moreSamples);
-                 setNextPing(time, currentTime);
+                 setNextPing({ time, tag }, currentTime);
              };
+             // Can be called with samples having null tag, which will be ignored.
+             const addSamples = samples => {
+                 // NOTE: Intentionally inefficient to be correct before the
+                 // obvious optimisations are performed.
+                 for (const sample of samples) {
+                     if (sample.tag) {
+                         const moreSamples = getSamples().unshift(sample);
+                         window.localStorage.setItem('fr_samples', JSON.stringify(moreSamples));
+                         setSamples(moreSamples);
+                     }
+                 }
+             }
              const csv = {
                  export: () => {
                      const data = new Blob([JSON.stringify(getSamples())], {type: 'text/plain'});
@@ -239,6 +262,7 @@
          // Clear out local storage when testing during development.
          if (DEV) {
              window.localStorage.setItem('fr_samples', JSON.stringify([]));
+             window.localStorage.setItem('fr_nextping', '');
          }
 
          const appDiv = document.getElementById('app');
