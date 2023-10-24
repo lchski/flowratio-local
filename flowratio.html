@@ -178,7 +178,7 @@
              };
              const [samples, setSamples] = useState(getSamples);
              const addSample = (time, tag) => {
-                 const moreSamples = getSamples().unshift({time, tag });
+                 const moreSamples = getSamples().unshift({ time, tag });
                  window.localStorage.setItem('fr_samples', JSON.stringify(moreSamples));
                  setSamples(moreSamples);
                  setNextPing(time, currentTime);

@@ -55,10 +55,19 @@ I think these are needed to reach the dangerous dogfooding point.
 ### Apparent bugs
 
 - [x] When AFK, it gets into an infinite loop somehow
-- [ ] Fan speed goes up when using – caught in rerendering loop or just tired
+- [x] Fan speed goes up when using – caught in rerendering loop or just tired
       computer?
-- [ ] Notification disappears after a brief while, despite requireInteraction:
-      true – why is that? I'd prefer it to time out with the afk auto-submission.
+  - I'm going to chalk this up to tired computer because I cannot see much CPU
+    usage in about:performance nor in the profiler
+- [x] Notification disappears after a brief while, despite requireInteraction:
+      true – why is that? I'd prefer it to time out with the afk
+      auto-submission.
+  - I think this might just be the GNOME notification system, because on
+    Windows it persists until the afk auto-submission.
+- [ ] Subsequent prompts triggered when afk should be auto-tagged afk, not
+      flowratio. That said, this is probably a low-prio bug since under
+      realistic settings it will rarely happen. (But it does happen all the time
+      under development, so it's easy to reproduce!)
 
 ### Latent bugs
 
