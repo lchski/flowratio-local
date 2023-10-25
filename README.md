@@ -23,12 +23,17 @@ that before you refresh in case you collect data you want to keep.
 
 ## Todo
 
+I think the main approach will be a main application that does all the pinging
+and sampling and stuff, and then a separate analytics application that reads the
+same data and presents it nicely.
 
-### Features
+### Features, Analytics Application
 
-#### Bare minimum
+TK
 
-I think these are needed to reach the dangerous dogfooding point.
+### Features, Main Application
+
+I think these are the bare minimum needed to reach the dangerous dogfooding point.
 
 - [x] Show notification when sampling
 - [x] Randomise interval between samples
@@ -43,18 +48,20 @@ I think these are needed to reach the dangerous dogfooding point.
 - [x] Set sane default times
 - [x] Stop clearing localstorage automatically
 
-#### Nice-to-haves
+There are also some nice-to-haves.
 
 - [x] Import from CSV
-- [ ] Summarise the data at least a little bit
 - [ ] Autocomplete when typing
+- [ ] Nice design
 
-#### Advanced features unlikely to happen
+I can sense at least one advanced feature unlikely to happen.
 
 - [ ] Give user ability to clear out log (or otherwise clean it up?) – the user
       can do this by means of export/import.
 
-### Apparent bugs
+### Bugs, Main Application
+
+These bugs are apparent.
 
 - [x] When AFK, it gets into an infinite loop somehow
 - [x] Fan speed goes up when using – caught in rerendering loop or just tired
@@ -71,7 +78,7 @@ I think these are needed to reach the dangerous dogfooding point.
       realistic settings it will rarely happen. (But it does happen all the time
       under development, so it's easy to reproduce!)
 
-### Latent bugs
+These bugs are latent.
 
 - [ ] Set some sort of mutex in local storage that prevents two flowratio tabs
       from being active at the same time. Maybe just have a random id generated
@@ -88,6 +95,6 @@ I think these are needed to reach the dangerous dogfooding point.
       12,000 "off" samples generated. I'm going to say that this is not going to
       be a problem for at least six months.
 
-### Fun refactoring
+This is a fun refactoring project I might play with at some point.
 
 - [ ] Convert from oldschool setTimeout etc to moderner async/await code?
