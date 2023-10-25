@@ -216,11 +216,17 @@
              }
              const csv = {
                  export: () => {
-                     const data = new Blob([JSON.stringify(getSamples())], {type: 'text/plain'});
+                     const csv = getSamples()
+                         .map(s => `${s.time.format()},${s.tag},${s.lambda}`)
+                         .join('\n');
+                     const filedata = new Blob(
+                         ['time,tag,lambda\n' + csv],
+                         { type: 'text/plain' }
+                     );
                      const a = document.createElement('a');
-                     const url = window.URL.createObjectURL(data);
+                     const url = window.URL.createObjectURL(filedata);
                      a.href = url;
-                     a.download = 'flowratio.json';
+                     a.download = 'flowratio.csv';
                      document.body.appendChild(a);
                      a.click();
                      setTimeout(() => {
@@ -253,34 +259,33 @@
 
 
              // Render application contents.
-             if (! notifyAllowed) {
-                 const requestButton =
-                     notifyPermission === 'denied'
-                     ? h('p', null, ['You have blocked notifications. Unblock them in your browser and refresh the page to use this app.'])
-                     : h('button', { onClick: requestNotifyPermission }, [ 'Request notification permission ']);
+             const requestButton =
+                 notifyPermission === 'denied'
+                 ? h('p', null, ['You have blocked notifications. Unblock them in your browser and refresh the page to use this app.'])
+                 : h('button', { onClick: requestNotifyPermission }, [ 'Request notification permission ']);
 
-                 return h('main', null, [
-                     h('p', null, [
-                         'This app (by its nature) ',
-                         h('a', {href: '#'}, ['does not work without notifications.']),
-                     ]),
-                     requestButton,
-                 ]);
-             } else {
-                 return h('main', null, [
-                     h('p', null, ['Time ' + currentTime.format()]),
-                     h(SampleForm, {
-                         currentPing,
-                         currentTime,
-                         addSample,
-                         prevSample: samples
-                             .filter(s => s.tag !== 'off' && s.tag !== 'afk' &&
-                                       s.tag !== 'flowratio')
-                             .first()
-                     }),
-                     h(ShowHistory, { csv, samples })
-                 ]);
-             }
+             const notificationPrompt = [
+                 h('p', null, [
+                     'This app (by its nature) ',
+                     h('a', {href: '#'}, ['does not work without notifications.']),
+                 ]),
+                 requestButton,
+             ];
+
+             const sampleForm = h(SampleForm, {
+                 currentPing,
+                 currentTime,
+                 addSample,
+                 prevSample: samples
+                     .filter(s => s.tag !== 'off' && s.tag !== 'afk' &&
+                               s.tag !== 'flowratio')
+                     .first()
+             });
+
+             return h('main', null, [
+                 notifyPermission === 'granted' ? sampleForm : notificationPrompt,
+                 h(ShowHistory, { csv, samples })
+             ]);
          }
 
          // Clear out local storage when testing during development.
