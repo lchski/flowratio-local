@@ -29,14 +29,14 @@ storage on startup.
 
 I think these are needed to reach the dangerous dogfooding point.
 
-- [x] Show notification when pinging
-- [x] Randomise interval between pings
+- [x] Show notification when sampling
+- [x] Randomise interval between samples
 - [x] Export to JSON
 - [x] Change export to CSV
 - [x] Autodetect when running again after sleep, closed tab, etc. Add "off" tagged
   Off means flowratio was off, not anything else. This can be accomplished
-  practically by storing the time for the next ping in localstorage and then if
-  now is singificantly greater than nextping, it means the ping happened when
+  practically by storing the time for the next sample in localstorage and then if
+  now is singificantly greater than nextping, it means the sample happened when
   flowratio was unable to bug the user, i.e. "off"
   - Autodetection in place, remains to be tested
 - [x] Set sane default times
@@ -77,9 +77,15 @@ I think these are needed to reach the dangerous dogfooding point.
       on page load, and store that as the active tab in localstorage. Each
       second, read from localstorage and ensure this tab is still active.
       Otherwise blank out and ask user to refresh to reset to this tab.
-- [ ] What happens if one desires to adjust lambda while using flowratio? Maybe
-      the lambda rate needs to be stored along with the ping time everywhere.
-      (That lets us translate the ping into "1/lambda minutes of work")
+- [x] What happens if one desires to adjust lambda while using flowratio? Maybe
+      the lambda rate needs to be stored along with the sample time everywhere.
+      (That lets us translate the sample into "1/lambda minutes of work")
+- [ ] If flowratio has been off for a long time it will sit in a blocking loop
+      to generate all the "off" samples. It might be possible to generate a single
+      "off" sample with a fat lambda instead. How big of a problem is it? Someone
+      starting up flowratio after a year with a lambda of 45 minutes will have
+      12,000 "off" samples generated. I'm going to say that this is not going to
+      be a problem for at least six months.
 
 ### Fun refactoring
 
