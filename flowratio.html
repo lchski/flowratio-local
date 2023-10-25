@@ -21,10 +21,15 @@
          if (DEV) {
              console.log('Running in development mode with more aggressive constants.');
          }
+         const RESET = new URLSearchParams(window.location.search).get('clear') === '1';
 
          const LAMBDA = DEV ? 10 : 45*60;  // Average number of seconds between pings.
          const AFK = DEV ? 10 : 60;  // Timeout on pings.
          const REFRESH_RATE = 1;  // Per second.
+
+         const Sample = (time, tag, lambda) => {
+             return { time, tag, lambda };
+         };
 
          const rexp = () => {
              // This is not strictly uniform in (0,1) but close enough.
@@ -32,8 +37,8 @@
              return -Math.log(u) * LAMBDA;
          };
 
-         function SampleForm({ currentPing, currentTime, addSample }) {
-             const [tagString, setTagString] = useState("woho");
+         function SampleForm({ currentPing, currentTime, addSample, prevSample }) {
+             const [tagString, setTagString] = useState( prevSample.tag  ?? "" );
 
              // Record sample on submission.
              const handleSubmit = (event, tagString) => {
@@ -108,12 +113,13 @@
          function App() {
 
              // Manage notification permissions.
-             const requestNotify = () => {
+             const [notifyPermission, setNotifyPermission] =
+                 useState(window.Notification.permission);
+             const notifyAllowed = notifyPermission === 'granted';
+             const requestNotifyPermission = () => {
                  window.Notification.requestPermission()
-                       .then(p => setNotifyAllowed(p === 'granted'));
+                       .then(p => setNotifyPermission(p));
              };
-             const [notifyAllowed, setNotifyAllowed] =
-                 useState(window.Notification.permission === 'granted');
 
 
              // Manage next ping time.
@@ -146,7 +152,7 @@
                      } else if (prevSample.tag === 'afk') {
                          nextTag = 'afk';
                      }
-                     samplesToAdd.push({ time: nextPing, tag: nextTag });
+                     samplesToAdd.push(Sample(nextPing, nextTag, LAMBDA));
                      nextPing = nextPing.add(rexp(), 'seconds');
                  }
                  addSamples(samplesToAdd);
@@ -165,11 +171,14 @@
                      setCurrentTime(dayjs());
                      if (notifyAllowed && ! pingTime) {
                          // Make sure we have a ping time when running.
-                         setNextPing({ time: dayjs(), tag: null }, dayjs());
+                         setNextPing(Sample(dayjs(), null, LAMBDA), dayjs());
                      } else if (pingTime.add(2*AFK, 'seconds') < currentTime) {
                          // If ping time is more than twice AFK in the past,
-                         // assume flowratio was off.
-                         setNextPing({ time: pingTime, tag: 'off' }, dayjs());
+                         // assume flowratio was off. This means some "off"
+                         // states may be translated into "afk" on aggressive
+                         // development settings, but it should be rare in
+                         // real usage – also I can't think of a way to avoid it.
+                         setNextPing(Sample(pingTime, 'off', LAMBDA), dayjs());
                      }
                  }, 1000/REFRESH_RATE);
              }, [currentTime]);
@@ -185,14 +194,13 @@
              // called within `addSample`, so that the local samples state
              // and the localStorage samples do not diverge.
              const getSamples = () => {
-                 return List(JSON.parse(window.localStorage.getItem('fr_samples')).map(s => {
-                     return { ...s, time: dayjs(s.time)};
-                 }));
+                 return List(JSON.parse(window.localStorage.getItem('fr_samples'))
+                                 .map(s => Sample(dayjs(s.time), s.tag, s.lambda)));
              };
              const [samples, setSamples] = useState(getSamples);
              // This function is starting to look unnecessary...
              const addSample = (time, tag) => {
-                 setNextPing({ time, tag }, currentTime);
+                 setNextPing(Sample(time, tag, LAMBDA), currentTime);
              };
              // Can be called with samples having null tag, which will be ignored.
              const addSamples = samples => {
@@ -246,21 +254,38 @@
 
              // Render application contents.
              if (! notifyAllowed) {
+                 const requestButton =
+                     notifyPermission === 'denied'
+                     ? h('p', null, ['You have blocked notifications. Unblock them in your browser and refresh the page to use this app.'])
+                     : h('button', { onClick: requestNotifyPermission }, [ 'Request notification permission ']);
+
                  return h('main', null, [
-                     h('p', null, ['This app (by its nature) does not work without notifications.']),
-                     h('button', { onClick: requestNotify }, [ 'Request notification permission ']),
+                     h('p', null, [
+                         'This app (by its nature) ',
+                         h('a', {href: '#'}, ['does not work without notifications.']),
+                     ]),
+                     requestButton,
                  ]);
              } else {
                  return h('main', null, [
                      h('p', null, ['Time ' + currentTime.format()]),
-                     h(SampleForm, { currentPing, currentTime, addSample }),
+                     h(SampleForm, {
+                         currentPing,
+                         currentTime,
+                         addSample,
+                         prevSample: samples
+                             .filter(s => s.tag !== 'off' && s.tag !== 'afk' &&
+                                       s.tag !== 'flowratio')
+                             .first()
+                     }),
                      h(ShowHistory, { csv, samples })
                  ]);
              }
          }
 
          // Clear out local storage when testing during development.
-         if (DEV) {
+         if (RESET) {
+             console.log('Resetting local storage');
              window.localStorage.setItem('fr_samples', JSON.stringify([]));
              window.localStorage.setItem('fr_nextping', '');
          }

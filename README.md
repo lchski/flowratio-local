@@ -33,7 +33,7 @@ I think these are needed to reach the dangerous dogfooding point.
 - [x] Randomise interval between pings
 - [x] Export to JSON
 - [ ] Change export to CSV
-- [ ] Autodetect when running again after sleep, closed tab, etc. Add "off" tagged
+- [x] Autodetect when running again after sleep, closed tab, etc. Add "off" tagged
   Off means flowratio was off, not anything else. This can be accomplished
   practically by storing the time for the next ping in localstorage and then if
   now is singificantly greater than nextping, it means the ping happened when
