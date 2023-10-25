@@ -10,7 +10,7 @@
         </style>
     </head>
     <body>
-        <div id="app">Loading...</div>
+        <div id="app">Loading (this can take a few seconds the first time)...</div>
         <script type="module">
          import { h, render, createContext } from 'https://unpkg.com/preact@latest?module';
          import { useState, useEffect, useRef } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
@@ -194,8 +194,13 @@
              // called within `addSample`, so that the local samples state
              // and the localStorage samples do not diverge.
              const getSamples = () => {
-                 return List(JSON.parse(window.localStorage.getItem('fr_samples'))
-                                 .map(s => Sample(dayjs(s.time), s.tag, s.lambda)));
+                 const json = window.localStorage.getItem('fr_samples');
+                 if (! json) {
+                     return List([]);
+                 } else {
+                     return List(JSON.parse(json)
+                                     .map(s => Sample(dayjs(s.time), s.tag, s.lambda)));
+                 }
              };
              const [samples, setSamples] = useState(getSamples);
              // This function is starting to look unnecessary...
@@ -267,7 +272,9 @@
              const notificationPrompt = [
                  h('p', null, [
                      'This app (by its nature) ',
-                     h('a', {href: '#'}, ['does not work without notifications.']),
+                     h('a', {
+                         href: 'https://two-wrongs.com/flowratio-stochastic-time-tracking'
+                     }, ['does not work without notifications.']),
                  ]),
                  requestButton,
              ];
