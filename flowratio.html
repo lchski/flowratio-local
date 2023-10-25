@@ -38,7 +38,7 @@
          };
 
          function SampleForm({ currentPing, currentTime, addSample, prevSample }) {
-             const [tagString, setTagString] = useState( prevSample.tag  ?? "" );
+             const [tagString, setTagString] = useState( prevSample?.tag  ?? "" );
 
              // Record sample on submission.
              const handleSubmit = (event, tagString) => {
@@ -172,7 +172,7 @@
                      if (notifyAllowed && ! pingTime) {
                          // Make sure we have a ping time when running.
                          setNextPing(Sample(dayjs(), null, LAMBDA), dayjs());
-                     } else if (pingTime.add(2*AFK, 'seconds') < currentTime) {
+                     } else if (pingTime && pingTime.add(2*AFK, 'seconds') < currentTime) {
                          // If ping time is more than twice AFK in the past,
                          // assume flowratio was off. This means some "off"
                          // states may be translated into "afk" on aggressive
