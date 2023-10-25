@@ -194,14 +194,16 @@
              // called within `addSample`, so that the local samples state
              // and the localStorage samples do not diverge.
              const getSamples = () => {
-                 const json = window.localStorage.getItem('fr_samples');
+                 const json = JSON.parse(window.localStorage.getItem('fr_samples'));
                  if (! json) {
                      return List([]);
                  } else {
-                     return List(JSON.parse(json)
-                                     .map(s => Sample(dayjs(s.time), s.tag, s.lambda)));
+                     return List(json.map(s => Sample(dayjs(s.time), s.tag, s.lambda)));
                  }
              };
+             const dropSamples = () => {
+                 window.localStorage.setItem('fr_samples', null);
+             }
              const [samples, setSamples] = useState(getSamples);
              // This function is starting to look unnecessary...
              const addSample = (time, tag) => {
@@ -240,7 +242,28 @@
                      });
                  },
                  import: () => {
-                     alert('Not implemented');
+                     var input = document.createElement("input");
+                     input.type = "file";
+                     input.accept = '.csv,text/plain';
+                     input.addEventListener('change', ev => {
+                         const reader = new FileReader();
+                         reader.onload = ev => {
+                             const data = ev.target.result;
+                             const rows = data.split('\n');
+                             if (rows.shift() !== 'time,tag,lambda') {
+                                 window.alert('Did not recognise file format');
+                                 return;
+                             }
+
+                             dropSamples();
+                             addSamples(rows.map(raw => {
+                                 const fields = raw.split(',');
+                                 return Sample(dayjs(fields[0]), fields[1], fields[2]);
+                             }));
+                         };
+                         reader.readAsText(ev.target.files[0]);
+                     });
+                     input.dispatchEvent(new MouseEvent("click"));
                  },
              };
 

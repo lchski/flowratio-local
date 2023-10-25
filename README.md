@@ -14,11 +14,12 @@ http://doc.beeminder.com/tagtime
 
 ## Running
 
-Open the HTML file in a browser and it should work.
+Open index.html in a browser and it should work.
 
 If using it for development and you want faster feedback, add ?dev=1 to the URL
-to (a) get much more aggressive time constants, and (b) have it clear out local
-storage on startup.
+to get much more aggressive time constants. If you want to clear out the data
+because you have toyed around, load it with ?clear=1 – but remember to remove
+that before you refresh in case you collect data you want to keep.
 
 ## Todo
 
@@ -44,14 +45,14 @@ I think these are needed to reach the dangerous dogfooding point.
 
 #### Nice-to-haves
 
-- [ ] Import from CSV
+- [x] Import from CSV
 - [ ] Summarise the data at least a little bit
 - [ ] Autocomplete when typing
 
 #### Advanced features unlikely to happen
 
 - [ ] Give user ability to clear out log (or otherwise clean it up?) – the user
-      can do this by means of export/import
+      can do this by means of export/import.
 
 ### Apparent bugs
 
