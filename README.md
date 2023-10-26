@@ -77,6 +77,11 @@ These bugs are apparent.
       flowratio. That said, this is probably a low-prio bug since under
       realistic settings it will rarely happen. (But it does happen all the time
       under development, so it's easy to reproduce!)
+- [ ] When my Windows laptop is closed, FlowRatio can generate both "off" and
+      "afk" events, sometimes at the same time. Something something modern
+      standby and how do I prevent it?
+- [ ] When my Windows laptop is closed, FlowRatio seems to generate an excessive
+      amount of pings, on average every 17 minutes.
 
 These bugs are latent.
 
@@ -94,6 +99,11 @@ These bugs are latent.
       starting up flowratio after a year with a lambda of 45 minutes will have
       12,000 "off" samples generated. I'm going to say that this is not going to
       be a problem for at least six months.
+- [ ] Changes to currentTime re-renders the entire application. With small
+      history a-re-render-a-second is fine but I should break the time-dependent
+      parts out from the ones that don't care about time. And/or memoize the
+      history so at least not that re-renders every second but only when it
+      changes.
 
 This is a fun refactoring project I might play with at some point.
 

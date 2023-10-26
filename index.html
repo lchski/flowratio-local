@@ -105,7 +105,7 @@
                  h('button', { onClick: csv.export }, [ 'Export' ]),
                  h('button', { onClick: csv.import }, [ 'Import' ]),
                  h('ul', null, [
-                     ...samples.map(s => h('li', null, [s.time.format() + ' ' + s.tag]))
+                     ...samples.reverse().map(s => h('li', null, [s.time.format() + ' ' + s.tag]))
                  ])
              ]);
          }
@@ -215,7 +215,7 @@
                  // obvious optimisations are performed.
                  for (const sample of samples) {
                      if (sample.tag) {
-                         const moreSamples = getSamples().unshift(sample);
+                         const moreSamples = getSamples().push(sample);
                          window.localStorage.setItem('fr_samples', JSON.stringify(moreSamples));
                          setSamples(moreSamples);
                      }
@@ -224,6 +224,7 @@
              const csv = {
                  export: () => {
                      const csv = getSamples()
+                         .sortBy(s => s.time)
                          .map(s => `${s.time.format()},${s.tag},${s.lambda}`)
                          .join('\n');
                      const filedata = new Blob(
