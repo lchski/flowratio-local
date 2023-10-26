@@ -101,6 +101,9 @@
 
          function ShowHistory({ csv, samples }) {
              return h('div', null, [
+                 h('p', null, [
+                     h('a', { target: '_BLANK', href: 'report.html' }, ['View report']),
+                 ]),
                  h('p', null, 'CSV: '),
                  h('button', { onClick: csv.export }, [ 'Export' ]),
                  h('button', { onClick: csv.import }, [ 'Import' ]),
