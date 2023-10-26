@@ -27,21 +27,37 @@
              }
              for (const tag of Object.keys(counts)) {
                  counts[tag] /= total;
-             }
-             console.log(counts);
-             return h('ul', null,
-                      Object.keys(counts).map(tag => {
-                          const frac = counts[tag];
-                          const perc = Math.round(frac*100);
-                          const sd = Math.round(Math.sqrt(frac*(1-frac)/total)*100);
-                          // Agresti–Coull this?
-                          const lower = Math.round(Math.max(0, perc - 1.645*sd));
-                          const upper = Math.round(Math.min(100, perc + 1.645*sd));
-                          return h('li', null, [
-                              `${tag} ${perc} % (${lower}–${upper} %)`
-                          ])
-                      })
-             );
+                 }
+
+
+             const viz = List(Object.keys(counts))
+                 .sortBy(k => counts[k])
+                 .reverse()
+                 .map(tag => {
+                     const frac = counts[tag];
+                     const perc = Math.round(frac*100);
+                     const sd = Math.round(Math.sqrt(frac*(1-frac)/total)*100);
+
+                     // Agresti–Coull this!
+                     const lower = Math.round(Math.max(0, perc - 1.645*sd));
+                     const upper = Math.round(Math.min(100, perc + 1.645*sd));
+
+                     const barwidth = 50;
+                     const labelwidth = 20;
+                     const label = tag.padStart(labelwidth, ' ').substring(0, labelwidth);
+                     const nums = `${perc} %`.padStart(5, ' ');
+                     const lbar = ''.padStart(lower, ' ');
+                     const ulbar = ''.padStart((perc-lower-1), '-');
+                     const uubar = ''.padStart((upper-perc), '-');
+                     const empty = ''.padStart((100 - upper), ' ');
+                     return `${label} ${nums} |${lbar}${ulbar}@${uubar}${empty}|`;
+                 })
+                 .join('\n');
+
+             return h('div', null, [
+                 h('p', null, ['Fraction of time spent on each category']),
+                 h('pre', null, [viz]),
+             ]);
          }
 
          function App() {

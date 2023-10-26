@@ -29,9 +29,20 @@ same data and presents it nicely.
 
 ### Features, Analytics Application
 
-- [ ] Percent of time spent on each thing in the last 14 days, with error bars
-- [ ] Total time spent on each thing in the last 14 days? with error bars
-- [ ] Consider migrating history display and csv import/export to analytics
+- [x] Percent of time spent on each high-level category with error bars
+- [ ] Total time spent on each thing?, with error bars
+  - Perhaps not until I have gained confidence in that it practically follows the
+    lambda its configured with...
+- [ ] Timespan selector for above display
+- [ ] Allow selecting a category and the above happens for only entries in that
+  - Even cooler would be a flamegraph – can I get that to happen? Could a
+    flamegraph sort of supersede everything else I want to do? I think it might...
+- [ ] Convert displays to pretty graphical plots
+- [ ] Migrate history display and csv import/export to analytics
+
+### Bugs, Analytics Application
+
+- [ ] Discoverability of the colon syntax is nonexistent
 
 ### Features, Main Application
 
