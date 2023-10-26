@@ -29,7 +29,9 @@ same data and presents it nicely.
 
 ### Features, Analytics Application
 
-TK
+- [ ] Percent of time spent on each thing in the last 14 days, with error bars
+- [ ] Total time spent on each thing in the last 14 days? with error bars
+- [ ] Consider migrating history display and csv import/export to analytics
 
 ### Features, Main Application
 

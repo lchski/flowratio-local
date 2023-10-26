@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+        <title>FlowRatio Report</title>
+        <style>
+        </style>
+    </head>
+    <body>
+        <div id="app">Loading (this can take a few seconds the first time)...</div>
+        <script type="module">
+         import { h, render, createContext } from 'https://unpkg.com/preact@latest?module';
+         import { useState, useEffect, useRef } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
+         import { List } from 'https://unpkg.com/immutable@latest?module';
+         import dayjs from 'https://cdn.skypack.dev/dayjs';
+
+         function TimeFraction({ samples }) {
+             const isInactive = s => s.tag.match(/^(off|afk)$/);
+             const nonInactive = samples.filter(s => ! isInactive(s));
+             let counts = {};
+             let total = 0;
+             for (const sample of nonInactive) {
+                 const tag = sample.tag.split(':')[0];
+                 if (! counts[tag]) counts[tag] = 0;
+                 counts[tag]++;
+                 total++;
+             }
+             for (const tag of Object.keys(counts)) {
+                 counts[tag] /= total;
+             }
+             console.log(counts);
+             return h('ul', null,
+                      Object.keys(counts).map(tag => {
+                          const frac = counts[tag];
+                          const perc = Math.round(frac*100);
+                          const sd = Math.round(Math.sqrt(frac*(1-frac)/total)*100);
+                          // Agresti–Coull this?
+                          const lower = Math.round(Math.max(0, perc - 1.645*sd));
+                          const upper = Math.round(Math.min(100, perc + 1.645*sd));
+                          return h('li', null, [
+                              `${tag} ${perc} % (${lower}–${upper} %)`
+                          ])
+                      })
+             );
+         }
+
+         function App() {
+             const json = JSON.parse(window.localStorage.getItem('fr_samples'));
+             const samples = List(json ?? []);
+
+
+             // Render application contents.
+             return h('main', null, [
+                 h(TimeFraction, { samples }),
+             ]);
+         }
+
+         const appDiv = document.getElementById('app');
+         appDiv.removeChild(appDiv.childNodes[0]);
+         render(h(App, null), appDiv);
+        </script>
+    </body>
+</html>
