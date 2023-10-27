@@ -16,46 +16,52 @@
 
          function TimeFraction({ samples }) {
              const isInactive = s => s.tag.match(/^(off|afk)$/);
-             const nonInactive = samples.filter(s => ! isInactive(s));
+             const isOld = s => dayjs(s.time).add(7, 'days') < dayjs();
+             const nonInactive =
+                 samples.filter(s => ! isInactive(s) && ! isOld(s));
+
              let counts = {};
              let total = 0;
+             let totalTime = 0;
              for (const sample of nonInactive) {
                  const tag = sample.tag.split(':')[0];
                  if (! counts[tag]) counts[tag] = 0;
                  counts[tag]++;
                  total++;
+                 totalTime += parseInt(sample.lambda);
              }
              for (const tag of Object.keys(counts)) {
                  counts[tag] /= total;
-                 }
-
+             }
 
              const viz = List(Object.keys(counts))
                  .sortBy(k => counts[k])
                  .reverse()
                  .map(tag => {
                      const frac = counts[tag];
-                     const perc = Math.round(frac*100);
-                     const sd = Math.round(Math.sqrt(frac*(1-frac)/total)*100);
+                     const hours = Math.round(frac*totalTime/60/60*10)/10;
+                     const sd = Math.sqrt(frac*(1-frac)/total);
 
                      // Agresti–Coull this!
-                     const lower = Math.round(Math.max(0, perc - 1.645*sd));
-                     const upper = Math.round(Math.min(100, perc + 1.645*sd));
+                     const lower = Math.max(0, frac - 1.645*sd);
+                     const upper = Math.min(1, frac + 1.645*sd);
 
                      const barwidth = 50;
                      const labelwidth = 20;
                      const label = tag.padStart(labelwidth, ' ').substring(0, labelwidth);
-                     const nums = `${perc} %`.padStart(5, ' ');
-                     const lbar = ''.padStart(lower, ' ');
-                     const ulbar = ''.padStart((perc-lower-1), '-');
-                     const uubar = ''.padStart((upper-perc), '-');
-                     const empty = ''.padStart((100 - upper), ' ');
-                     return `${label} ${nums} |${lbar}${ulbar}@${uubar}${empty}|`;
+                     const perc = `${Math.round(frac*100)} %`.padStart(5, ' ');
+                     const hrs = `(${hours} h)`.padStart(8, ' ');
+                     const lbar = ''.padStart(100*lower, ' ');
+                     const ulbar = ''.padStart(100*(frac-lower)-1, '-');
+                     const uubar = ''.padStart(100*(upper-frac), '-');
+                     const empty = ''.padStart(100*(1 - upper), ' ');
+                     return `${label} ${perc} ${hrs} |${lbar}${ulbar}@${uubar}${empty}|`;
                  })
                  .join('\n');
 
+             const totalHours = Math.round(totalTime/60/60);
              return h('div', null, [
-                 h('p', null, ['Fraction of time spent on each category']),
+                 h('p', null, [`Time spent on each category, last 7 days (total ${totalHours} h)`]),
                  h('pre', null, [viz]),
              ]);
          }
