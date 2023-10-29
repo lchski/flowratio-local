@@ -61,10 +61,20 @@
 
              const totalHours = Math.round(totalTime/60/60);
              return h('div', null, [
-                 h('p', null, [`Time spent on each category, last 7 days (total ${totalHours} h)`]),
-                 h('pre', null, [viz]),
+                 h('p', null, [`Time spent on each category, last 7 days (total ${totalHours} h):`]),
+                 h('pre', null, [viz ? viz : 'Nothing here yet – go do some stuff!' ]),
              ]);
          }
+
+         function ShowHistory({ samples }) {
+             return h('div', null, [
+                 h('p', null, [ 'Log:' ]),
+                 h('ul', null, [
+                     ...samples.reverse().map(s => h('li', null, [dayjs(s.time).format() + ' ' + s.tag]))
+                 ])
+             ]);
+         }
+
 
          function App() {
              const json = JSON.parse(window.localStorage.getItem('fr_samples'));
@@ -74,6 +84,7 @@
              // Render application contents.
              return h('main', null, [
                  h(TimeFraction, { samples }),
+                 h(ShowHistory, { samples })
              ]);
          }
 

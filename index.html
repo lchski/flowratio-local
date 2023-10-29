@@ -99,20 +99,6 @@
              }
          }
 
-         function ShowHistory({ csv, samples }) {
-             return h('div', null, [
-                 h('p', null, [
-                     h('a', { target: '_BLANK', href: 'report.html' }, ['View report']),
-                 ]),
-                 h('p', null, 'CSV: '),
-                 h('button', { onClick: csv.export }, [ 'Export' ]),
-                 h('button', { onClick: csv.import }, [ 'Import' ]),
-                 h('ul', null, [
-                     ...samples.reverse().map(s => h('li', null, [s.time.format() + ' ' + s.tag]))
-                 ])
-             ]);
-         }
-
          function App() {
 
              // Manage notification permissions.
@@ -318,7 +304,12 @@
 
              return h('main', null, [
                  notifyPermission === 'granted' ? sampleForm : notificationPrompt,
-                 h(ShowHistory, { csv, samples })
+                 h('p', null, [
+                     h('a', { target: '_BLANK', href: 'report.html' }, ['View report']),
+                 ]),
+                 h('p', null, 'CSV: '),
+                 h('button', { onClick: csv.export }, [ 'Export' ]),
+                 h('button', { onClick: csv.import }, [ 'Import' ]),
              ]);
          }
 
