@@ -5,14 +5,65 @@
         <title>FlowRatio Report</title>
         <style>
         </style>
+        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.css">
     </head>
     <body>
         <div id="app">Loading (this can take a few seconds the first time)...</div>
+        <!-- These are way too fat to import as modules. -->
+        <script type="text/javascript" src="https://d3js.org/d3.v7.js"></script>
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.min.js"></script>
         <script type="module">
          import { h, render, createContext } from 'https://unpkg.com/preact@latest?module';
          import { useState, useEffect, useRef } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
          import { List } from 'https://unpkg.com/immutable@latest?module';
          import dayjs from 'https://cdn.skypack.dev/dayjs';
+
+         const FLAMEGRAPH = new URLSearchParams(window.location.search).get('flame') === '1';
+
+         function FlameGraph({ samples }) {
+             const container = useRef(null);
+
+             const addChild = (node, tags) => {
+                 node.value++;
+                 if (tags.length > 0) {
+                     const next = tags.shift();
+                     for (const child of node.children) {
+                         if (child.name === next) {
+                             addChild(child, tags);
+                             return;
+                         }
+                     }
+                     // If we get here, the child was not found.
+                     const child = { name: next, value: 0, children: [] };
+                     node.children.push(child);
+                     addChild(child, tags)
+                 }
+             }
+
+             useEffect(() => {
+                 const isInactive = s => s.tag.match(/^(off|afk)$/);
+                 const isOld = s => dayjs(s.time).add(7, 'days') < dayjs();
+                 const nonInactive =
+                     samples.filter(s => ! isInactive(s) && ! isOld(s))
+                            .sortBy(s => s.tag);
+
+                 let data = { name: 'active', value: 0, children: [] };
+                 for (const sample of nonInactive) {
+                     const tags = sample.tag.split(':');
+                     addChild(data, tags);
+                 }
+                 const chart = flamegraph().width(800);
+                 d3.select(container.current)
+                   .datum(data)
+                   .call(chart);
+
+             }, [samples]);
+
+             return h('div', null, [
+                 h('p', null, ['Flamegraph (experimental):']),
+                 h('div', { ref: container}),
+             ]);
+         }
 
          function TimeFraction({ samples }) {
              const isInactive = s => s.tag.match(/^(off|afk)$/);
@@ -80,10 +131,10 @@
              const json = JSON.parse(window.localStorage.getItem('fr_samples'));
              const samples = List(json ?? []);
 
-
              // Render application contents.
              return h('main', null, [
                  h(TimeFraction, { samples }),
+                 ...[ FLAMEGRAPH ? h(FlameGraph, { samples }) : h('div', null)],
                  h(ShowHistory, { samples })
              ]);
          }
