@@ -12,6 +12,7 @@
         <!-- These are way too fat to import as modules. -->
         <script type="text/javascript" src="https://d3js.org/d3.v7.js"></script>
         <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.min.js"></script>
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph-tooltip.min.js"></script>
         <script type="module">
          import { h, render, createContext } from 'https://unpkg.com/preact@latest?module';
          import { useState, useEffect, useRef } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
@@ -23,20 +24,20 @@
          function FlameGraph({ samples }) {
              const container = useRef(null);
 
-             const addChild = (node, tags) => {
-                 node.value++;
+             const addChild = (node, tags, lambda) => {
+                 node.value += +lambda;
                  if (tags.length > 0) {
                      const next = tags.shift();
                      for (const child of node.children) {
                          if (child.name === next) {
-                             addChild(child, tags);
+                             addChild(child, tags, lambda);
                              return;
                          }
                      }
                      // If we get here, the child was not found.
                      const child = { name: next, value: 0, children: [] };
                      node.children.push(child);
-                     addChild(child, tags)
+                     addChild(child, tags, lambda);
                  }
              }
 
@@ -47,12 +48,30 @@
                      samples.filter(s => ! isInactive(s) && ! isOld(s))
                             .sortBy(s => s.tag);
 
+                 let totalTime = 0;
+                 let sampleCount = 0;
                  let data = { name: 'active', value: 0, children: [] };
                  for (const sample of nonInactive) {
                      const tags = sample.tag.split(':');
-                     addChild(data, tags);
+                     addChild(data, tags, sample.lambda);
+                     totalTime += +sample.lambda;
+                     sampleCount++;
                  }
-                 const chart = flamegraph().width(800);
+                 const tooltipString = d => {
+                     const frac = d.data.value / totalTime;
+                     const sd = Math.sqrt(frac*(1-frac)/sampleCount);
+                     const lower = Math.max(0, frac - 1.645*sd);
+                     const upper = Math.min(1, frac + 1.645*sd);
+                     const lowerHours = Math.round(d.data.value*lower*10/60/60)/10;
+                     const upperHours = Math.round(d.data.value*upper*10/60/60)/10;
+                     const perc = `${Math.round(100*(d.x1 - d.x0))} %`;
+                     const hourRange = `${lowerHours}–${upperHours} h`;
+                     const sampleInfo = `from ${d.data.value} samples`;
+                     return `${d.data.name}, ${perc} (${hourRange}, ${sampleInfo})`;
+                 }
+                 const chart = flamegraph()
+                     .width(800)
+                     .tooltip(flamegraph.tooltip.defaultFlamegraphTooltip() .text(tooltipString));
                  d3.select(container.current)
                    .datum(data)
                    .call(chart);
