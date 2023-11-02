@@ -62,12 +62,11 @@
                      const sd = Math.sqrt(frac*(1-frac)/sampleCount);
                      const lower = Math.max(0, frac - 1.645*sd);
                      const upper = Math.min(1, frac + 1.645*sd);
-                     const lowerHours = Math.round(d.data.value*lower*10/60/60)/10;
-                     const upperHours = Math.round(d.data.value*upper*10/60/60)/10;
+                     const lowerHours = Math.round(totalTime*lower*10/60/60)/10;
+                     const upperHours = Math.round(totalTime*upper*10/60/60)/10;
                      const perc = `${Math.round(100*(d.x1 - d.x0))} %`;
                      const hourRange = `${lowerHours}–${upperHours} h`;
-                     const sampleInfo = `from ${d.data.value} samples`;
-                     return `${d.data.name}, ${perc} (${hourRange}, ${sampleInfo})`;
+                     return `${d.data.name}, ${perc} (${hourRange})`;
                  }
                  const chart = flamegraph()
                      .width(800)
