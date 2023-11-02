@@ -99,6 +99,15 @@
              }
          }
 
+         function RecentSamples({ samples }) {
+             return h('div', null, [
+                 h('p', null, [ 'Last 10 samples:' ]),
+                 h('ul', null, [
+                     ...samples.reverse().take(10).map(s => h('li', null, [dayjs(s.time).format() + ' ' + s.tag]))
+                 ])
+             ]);
+         }
+
          function App() {
 
              // Manage notification permissions.
@@ -310,6 +319,7 @@
                  h('p', null, 'CSV: '),
                  h('button', { onClick: csv.export }, [ 'Export' ]),
                  h('button', { onClick: csv.import }, [ 'Import' ]),
+                 h(RecentSamples, { samples })
              ]);
          }
 
