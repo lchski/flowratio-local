@@ -311,16 +311,6 @@
                  ? h('p', null, ['You have blocked notifications. Unblock them in your browser and refresh the page to use this app.'])
                  : h('button', { onClick: requestNotifyPermission }, [ 'Request notification permission ']);
 
-             const notificationPrompt = [
-                 h('p', null, [
-                     'This app (by its nature) ',
-                     h('a', {
-                         href: 'https://two-wrongs.com/flowratio-stochastic-time-tracking'
-                     }, ['does not work without notifications.']),
-                 ]),
-                 requestButton,
-             ];
-
              const sampleForm = h(SampleForm, {
                  currentPing,
                  currentTime,
@@ -332,7 +322,7 @@
              });
 
              return h('main', null, [
-                 notifyPermission === 'granted' ? sampleForm : notificationPrompt,
+                 notifyPermission === 'granted' ? sampleForm : requestButton,
                  h('p', null, [
                      h('a', { target: '_BLANK', href: 'report.html' }, ['View report']),
                  ]),
