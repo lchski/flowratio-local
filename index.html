@@ -318,7 +318,7 @@
                  prevSample: samples
                      .filter(s => s.tag !== 'off' && s.tag !== 'afk' &&
                                s.tag !== 'flowratio')
-                     .first()
+                     .last()
              });
 
              const csvAndLog = [
