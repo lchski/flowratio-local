@@ -321,28 +321,32 @@
                      .first()
              });
 
+             const csvAndLog = [
+                 h('p', null, 'CSV: '),
+                 h('button', { onClick: csv.export }, [ 'Export' ]),
+                 h('button', { onClick: csv.import }, [ 'Import' ]),
+                 h(RecentSamples, { samples, updateTagString })
+             ];
+
              return h('main', null, [
                  notifyPermission === 'granted' ? sampleForm : requestButton,
                  h('p', null, [
                      h('a', { target: '_BLANK', href: 'report.html' }, ['View report']),
                  ]),
-                 h('p', null, 'CSV: '),
-                 h('button', { onClick: csv.export }, [ 'Export' ]),
-                 h('button', { onClick: csv.import }, [ 'Import' ]),
-                     h(RecentSamples, { samples, updateTagString })
-                 ]);
-             }
+                 ...( samples.size ? csvAndLog : [])
+             ]);
+         }
 
-             // Clear out local storage when testing during development.
-             if (RESET) {
-                 console.log('Resetting local storage');
-                 window.localStorage.setItem('fr_samples', JSON.stringify([]));
-                 window.localStorage.setItem('fr_nextping', '');
-             }
+         // Clear out local storage when testing during development.
+         if (RESET) {
+             console.log('Resetting local storage');
+             window.localStorage.setItem('fr_samples', JSON.stringify([]));
+             window.localStorage.setItem('fr_nextping', '');
+         }
 
-             const appDiv = document.getElementById('app');
-             appDiv.removeChild(appDiv.childNodes[0]);
-             render(h(App, null), appDiv);
-            </script>
+         const appDiv = document.getElementById('app');
+         appDiv.removeChild(appDiv.childNodes[0]);
+         render(h(App, null), appDiv);
+        </script>
     </body>
 </html>
