@@ -19,11 +19,23 @@
          import { List } from 'https://unpkg.com/immutable@latest?module';
          import dayjs from 'https://cdn.skypack.dev/dayjs';
 
-         function FlameGraph({ samples }) {
-             const container = useRef(null);
+         function useWindowWidth() {
+             const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
+             useEffect(() => {
+                 const onResize = () => setWindowWidth(window.innerWidth);
+                 window.addEventListener("resize", onResize);
+                 return () => window.removeEventListener("resize", onResize);
+             }, []);
+
+             return windowWidth;
+         }
+
+         function FlameGraph({ samples }) {
+             // Recursive method to add a sample to hierarchy.
              const addChild = (node, tags, lambda) => {
                  node.value += +lambda;
+                 node.samples++;
                  if (tags.length > 0) {
                      const next = tags.shift();
                      for (const child of node.children) {
@@ -33,42 +45,69 @@
                          }
                      }
                      // If we get here, the child was not found.
-                     const child = { name: next, value: 0, children: [] };
+                     const child = { name: next, value: 0, samples: 0, children: [] };
                      node.children.push(child);
                      addChild(child, tags, lambda);
                  }
              }
 
+             // Reference to container element from flamegraph svg.
+             const container = useRef(null);
+
+             const windowWidth = useWindowWidth();
+
              useEffect(() => {
+                 // Find the relevant samples to show.
                  const isInactive = s => s.tag.match(/^(off|afk)$/);
                  const isOld = s => dayjs(s.time).add(7, 'days') < dayjs();
                  const nonInactive =
                      samples.filter(s => ! isInactive(s) && ! isOld(s))
                             .sortBy(s => s.tag);
 
+                 // Build hierarchy from samples.
                  let totalTime = 0;
                  let sampleCount = 0;
-                 let data = { name: 'active', value: 0, children: [] };
+                 let data = { name: 'active', value: 0, samples: 0, children: [] };
                  for (const sample of nonInactive) {
                      const tags = sample.tag.split(':');
                      addChild(data, tags, sample.lambda);
                      totalTime += +sample.lambda;
                      sampleCount++;
                  }
+
+                 // Display information on each bar.
                  const tooltipString = d => {
-                     const frac = d.data.value / totalTime;
-                     const sd = Math.sqrt(frac*(1-frac)/sampleCount);
-                     const lower = Math.max(0, frac - 1.645*sd);
-                     const upper = Math.min(1, frac + 1.645*sd);
-                     const lowerHours = Math.round(totalTime*lower*10/60/60)/10;
-                     const upperHours = Math.round(totalTime*upper*10/60/60)/10;
-                     const perc = `${Math.round(100*(d.x1 - d.x0))} %`;
+                     // This is constructing a 90 % interval for the hours
+                     // through VERY improvised means.
+                     //
+                     // Originally, this used binomial intervals to estimate a
+                     // 90 % interval of the fraction of time spent on each thing,
+                     // but when converting this to hours it behaves weirdly.
+                     // E.g. if you spend 100 % of your time on one thing,
+                     // it looks like it's incredibly certain of how the amount
+                     // of time spent on this thing, when in fact it's only
+                     // somewhat certain of the fraction.
+                     //
+                     // So I'm trying instead going through the Poisson
+                     // distribution and the sample count but bear in mind
+                     // I have absolutely no idea what I'm doing here!
+
+                     const cv = Math.sqrt(d.data.samples)/d.data.samples;
+                     const sd = cv * d.data.value;
+                     const lowerHours = Math.round((d.data.value - 1.645*sd)/60/60);
+                     const upperHours = Math.round((d.data.value + 1.645*sd)/60/60);
                      const hourRange = `${lowerHours}–${upperHours} h`;
+
+                     const perc = `${Math.round(100*(d.x1 - d.x0))} %`;
                      return `${d.data.name}, ${perc} (${hourRange})`;
                  }
+
+                 // Create flamechart.
+                 const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
                  const chart = flamegraph()
-                     .width(800)
-                     .tooltip(flamegraph.tooltip.defaultFlamegraphTooltip() .text(tooltipString));
+                     .width(Math.min(windowWidth-4*rem, 80*rem))
+                     .tooltip(flamegraph.tooltip.defaultFlamegraphTooltip().text(tooltipString));
+
                  d3.select(container.current)
                    .datum(data)
                    .call(chart);
@@ -76,14 +115,15 @@
              }, [samples]);
 
              return h('div', null, [
-                 h('p', null, ['Flamegraph (hover for details, click to zoom):']),
+                 h('h2', null, ['Flamegraph']),
                  h('div', { ref: container}),
+                 h('p', null, ['(hover for details, click to zoom)']),
              ]);
          }
 
          function ShowHistory({ samples }) {
              return h('div', null, [
-                 h('p', null, [ 'Log:' ]),
+                 h('h2', null, [ 'Log' ]),
                  h('ul', null, [
                      ...samples.reverse().map(s => h('li', null, [dayjs(s.time).format() + ' ' + s.tag]))
                  ])
@@ -97,6 +137,7 @@
 
              // Render application contents.
              return h('main', null, [
+                 h('h1', null, 'Last 7 days'),
                  h(FlameGraph, { samples }),
                  h(ShowHistory, { samples })
              ]);
