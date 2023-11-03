@@ -99,11 +99,18 @@
              }
          }
 
-         function RecentSamples({ samples }) {
+         function RecentSamples({ samples, updateTagString }) {
              return h('div', null, [
                  h('p', null, [ 'Last 10 samples:' ]),
                  h('ul', null, [
-                     ...samples.reverse().take(10).map(s => h('li', null, [dayjs(s.time).format() + ' ' + s.tag]))
+                     ...samples.reverse().take(10).map((s, idx) => h('li', null, [
+                         dayjs(s.time).format(),
+                         h('input', {
+                             type: 'text',
+                             value: s.tag,
+                             onInput: ev => updateTagString(ev.target.value, idx),
+                         }),
+                     ]))
                  ])
              ]);
          }
@@ -219,6 +226,13 @@
                      }
                  }
              }
+             const updateTagString = (str, revIdx) => {
+                 setSamples(ss => {
+                     const newSamples = ss.update(ss.size-revIdx-1, s => { return { ...s, tag: str }; });
+                     window.localStorage.setItem('fr_samples', JSON.stringify(newSamples));
+                     return newSamples;
+                 });
+             };
              const csv = {
                  export: () => {
                      const csv = getSamples()
@@ -248,23 +262,23 @@
                          const reader = new FileReader();
                          reader.onload = ev => {
                              const data = ev.target.result;
-                             const rows = data.split('\n');
-                             if (rows.shift() !== 'time,tag,lambda') {
-                                 window.alert('Did not recognise file format');
-                                 return;
-                             }
+                                 const rows = data.split('\n');
+                                 if (rows.shift() !== 'time,tag,lambda') {
+                                     window.alert('Did not recognise file format');
+                                     return;
+                                 }
 
-                             dropSamples();
-                             addSamples(rows.map(raw => {
-                                 const fields = raw.split(',');
-                                 return Sample(dayjs(fields[0]), fields[1], fields[2]);
-                             }));
-                         };
-                         reader.readAsText(ev.target.files[0]);
-                     });
-                     input.dispatchEvent(new MouseEvent("click"));
-                 },
-             };
+                                 dropSamples();
+                                 addSamples(rows.map(raw => {
+                                     const fields = raw.split(',');
+                                     return Sample(dayjs(fields[0]), fields[1], fields[2]);
+                                 }));
+                             };
+                             reader.readAsText(ev.target.files[0]);
+                         });
+                         input.dispatchEvent(new MouseEvent("click"));
+                     },
+                 };
 
 
              // Manage ping notification.
@@ -319,7 +333,7 @@
                  h('p', null, 'CSV: '),
                  h('button', { onClick: csv.export }, [ 'Export' ]),
                  h('button', { onClick: csv.import }, [ 'Import' ]),
-                 h(RecentSamples, { samples })
+                 h(RecentSamples, { samples, updateTagString })
              ]);
          }
 
