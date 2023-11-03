@@ -288,7 +288,11 @@
 
 
              // Manage ping notification.
-             const currentPing = pingTime > currentTime ? null : pingTime;
+             // We need to allow the ping to be active a little while after the
+             // AFK expiration, to give the form a chance to auto-submit AFK.
+             const currentlyEarly = pingTime > currentTime;
+             const currentlyLate = pingTime.add(AFK*1.5, 'seconds') < currentTime;
+             const currentPing = currentlyEarly || currentlyLate ? null : pingTime;
              const [pingNotification, setPingNotification] = useState(null);
              useEffect(() => {
                  if (!pingNotification && currentPing) {

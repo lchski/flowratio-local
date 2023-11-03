@@ -116,9 +116,18 @@ These bugs are apparent.
 - [ ] When my Windows laptop is closed, FlowRatio can generate both "off" and
       "afk" events, sometimes at the same time. Something something modern
       standby and how do I prevent it?
+      - This happens also on Linux and I'm now thinking it's not that it does
+        things while asleep, but rather that when FlowRatio catches up,
+        everytime a new expired ping time is generated, the submission form
+        races to auto-submit an AFK before the generation code submits an OFF.
+        Sometimes the form wins handily and the OFF never comes in, sometimes
+        the OFF wins and the AFK never comes in, and sometimes – and this was
+        the clue – the AFK happens instants before the OFF and both are
+        submitted – but never the other way around!
 - [ ] When my Windows laptop is closed, FlowRatio seems to generate an excessive
-      amount of pings, on average every 17 minutes. Both of these bugs seem to
-      happen also on Linux.
+      amount of pings, on average every 32 minutes. This might not sound far
+      from 45 minutes, buuut unless I'm doing statistics wrong, this should
+      happen extreemely rarely by accident.
 
 These bugs are latent.
 
