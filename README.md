@@ -1,46 +1,62 @@
 # FlowRatio Tracker
 
-I've long considered Tippett's snap reading a superior time tracking
-methodology, but it comes with some practical difficulties. Daniel Reeves
-[convinced me those are no big deal](https://messymatters.com/tagtime).
-Unfortunately, while Reeves' implementation is technically cross-platform, I
-felt like I could spend some time getting it going on Windows.
+A work sampling based time tracker. That runs in the browser with no additional
+anything. Try it out: https://xkqr.org/flowratio/
 
-So I figured how hard can it be to write a pure JavaScript version that runs
-anywhere? Well, I'm not there yet, so we'll see.
+Here's some background: https://two-wrongs.com/flowratio-stochastic-time-tracking.html
 
-Here are some other implementations of Reeves' original concept:
-http://doc.beeminder.com/tagtime
+## Usage
 
-## Running
+Open the web page, and allow notifications. If it says "PENDING", go do whatever
+you were going to do next. At some point in the future, you'll get a
+notification and it will ask you about what you are doing. Write down a short
+keyword that indicates what you are doing RIGHT NOW.
 
-Open index.html in a browser and it should work.
+If you want to structure your keywords, you can use a colon to separate a
+subcategory from a main category, like "work:docs" for writing documentation at
+work.
 
-If using it for development and you want faster feedback, add ?dev=1 to the URL
-to get much more aggressive time constants. If you want to clear out the data
-because you have toyed around, load it with ?clear=1 – but remember to remove
-that before you refresh in case you collect data you want to keep.
+Once you've done this a few times, you can click on report to see how you spend
+your time.
+
+### Tips
+
+You don't need to track everything you do in great detail! If you're curious
+e.g. how much time you spend in meetings, you can just tag "meetings" and
+"other" for a few weeks and you'll find out. Or if you want to increase the
+amount of time you spend on writing documentation, you can just tag "docs" and
+"other" for a while and try to make the number go up.
+
+## Development
+
+If you want to test your changes, open index.html in a browser and it should
+work. Maybe you have to go through a separate web server like `python -m
+http.server 8001`.
+
+In development you might want faster feedback. Add ?dev=1 to the URL to get much
+more aggressive time constants. If you want to clear out the data because you
+have toyed around, load it with ?clear=1 – but remember to remove that before
+you refresh in case you collect data you want to keep.
 
 ## Todo
 
-I think the main approach will be a main application that does all the pinging
-and sampling and stuff, and then a separate analytics application that reads the
-same data and presents it nicely.
 
 ### Features, Analytics Application
 
 - [x] Percent of time spent on each high-level category with error bars
-- [ ] Total time spent on each thing?, with error bars
-  - Perhaps not until I have gained confidence in that it practically follows the
-    lambda its configured with...
-- [ ] Timespan selector for above display
-- [ ] Allow selecting a category and the above happens for only entries in that
+- [x] Total time spent on each thing?, with error bars
+- [ ] Timespan selector for above display – this takes figuring out how to
+      re-render the flame graph without breaking everything
+- [x] Allow selecting a category and the above happens for only entries in that
   - Even cooler would be a flamegraph – can I get that to happen? Could a
     flamegraph sort of supersede everything else I want to do? I think it
     might... EXCEPT it doesn't have error bars! How do I get error bars on that?
     Or should I indicate insecurity some other way?
-- [ ] Convert displays to pretty graphical plots
-- [ ] Migrate history display and csv import/export to analytics
+- [x] Convert displays to pretty graphical plots
+- [x] Migrate history display to analytics
+- [x] Won't do: migrate CSV export/import to analytics. The reason is that I
+   want analytics to be read-only, and the main application is the only thing that
+   writes to the data.
 
 ### Bugs, Analytics Application
 
@@ -71,8 +87,13 @@ There are also some nice-to-haves.
 
 I can sense at least one advanced feature unlikely to happen.
 
-- [ ] Give user ability to clear out log (or otherwise clean it up?) – the user
-      can do this by means of export/import.
+- [x] Allow user to edit the recent history of tags directly in the application.
+      The user can do things like fix spelling errors by export/import.
+      - But aaaactually, I fairly often get pings when I'm presenting things in
+        meetings and it would be really convenient to be able to change the afk
+        to a "work:meeting" tag after, so I'll add this feature anyway.
+- [ ] Give user ability to clear out log– the user can do this by means of
+      export/import.
 
 ### Bugs, Main Application
 
@@ -96,7 +117,8 @@ These bugs are apparent.
       "afk" events, sometimes at the same time. Something something modern
       standby and how do I prevent it?
 - [ ] When my Windows laptop is closed, FlowRatio seems to generate an excessive
-      amount of pings, on average every 17 minutes.
+      amount of pings, on average every 17 minutes. Both of these bugs seem to
+      happen also on Linux.
 
 These bugs are latent.
 

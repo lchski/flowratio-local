@@ -8,6 +8,7 @@
         <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.css">
     </head>
     <body>
+        <h1>FlowRatio Report</h1>
         <div id="app">Loading (this can take a few seconds the first time)...</div>
         <!-- These are way too fat to import as modules. -->
         <script type="text/javascript" src="https://d3js.org/d3.v7.js"></script>
@@ -137,7 +138,7 @@
 
              // Render application contents.
              return h('main', null, [
-                 h('h1', null, 'Last 7 days'),
+                 h('p', null, 'Displaying last 7 days'),
                  h(FlameGraph, { samples }),
                  h(ShowHistory, { samples })
              ]);

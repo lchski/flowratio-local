@@ -10,7 +10,13 @@
         </style>
     </head>
     <body>
+        <h1>FlowRatio Tracker</h1>
         <div id="app">Loading (this can take a few seconds the first time)...</div>
+
+        <hr/>
+        <p>Confused? Currently, <a href="https://git.sr.ht/~kqr/flowratio">the readme is
+            the documentation</a>.</p>
+
         <script type="module">
          import { h, render, createContext } from 'https://unpkg.com/preact@latest?module';
          import { useState, useEffect, useRef } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
@@ -262,23 +268,23 @@
                          const reader = new FileReader();
                          reader.onload = ev => {
                              const data = ev.target.result;
-                                 const rows = data.split('\n');
-                                 if (rows.shift() !== 'time,tag,lambda') {
-                                     window.alert('Did not recognise file format');
-                                     return;
-                                 }
+                             const rows = data.split('\n');
+                             if (rows.shift() !== 'time,tag,lambda') {
+                                 window.alert('Did not recognise file format');
+                                 return;
+                             }
 
-                                 dropSamples();
-                                 addSamples(rows.map(raw => {
-                                     const fields = raw.split(',');
-                                     return Sample(dayjs(fields[0]), fields[1], fields[2]);
-                                 }));
-                             };
-                             reader.readAsText(ev.target.files[0]);
-                         });
-                         input.dispatchEvent(new MouseEvent("click"));
-                     },
-                 };
+                             dropSamples();
+                             addSamples(rows.map(raw => {
+                                 const fields = raw.split(',');
+                                 return Sample(dayjs(fields[0]), fields[1], fields[2]);
+                             }));
+                         };
+                         reader.readAsText(ev.target.files[0]);
+                     });
+                     input.dispatchEvent(new MouseEvent("click"));
+                 },
+             };
 
 
              // Manage ping notification.
@@ -333,20 +339,20 @@
                  h('p', null, 'CSV: '),
                  h('button', { onClick: csv.export }, [ 'Export' ]),
                  h('button', { onClick: csv.import }, [ 'Import' ]),
-                 h(RecentSamples, { samples, updateTagString })
-             ]);
-         }
+                     h(RecentSamples, { samples, updateTagString })
+                 ]);
+             }
 
-         // Clear out local storage when testing during development.
-         if (RESET) {
-             console.log('Resetting local storage');
-             window.localStorage.setItem('fr_samples', JSON.stringify([]));
-             window.localStorage.setItem('fr_nextping', '');
-         }
+             // Clear out local storage when testing during development.
+             if (RESET) {
+                 console.log('Resetting local storage');
+                 window.localStorage.setItem('fr_samples', JSON.stringify([]));
+                 window.localStorage.setItem('fr_nextping', '');
+             }
 
-         const appDiv = document.getElementById('app');
-         appDiv.removeChild(appDiv.childNodes[0]);
-         render(h(App, null), appDiv);
-        </script>
+             const appDiv = document.getElementById('app');
+             appDiv.removeChild(appDiv.childNodes[0]);
+             render(h(App, null), appDiv);
+            </script>
     </body>
 </html>
