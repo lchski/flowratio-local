@@ -28,6 +28,7 @@
              console.log('Running in development mode with more aggressive constants.');
          }
          const RESET = new URLSearchParams(window.location.search).get('clear') === '1';
+         const LOG =  new URLSearchParams(window.location.search).get('log') === '1';;
 
          const LAMBDA = DEV ? 10 : 45*60;  // Average number of seconds between pings.
          const AFK = DEV ? 10 : 60;  // Timeout on pings.
@@ -50,6 +51,7 @@
              const handleSubmit = (event, tagString) => {
                  event?.preventDefault();
                  if (currentPing) {
+                     if (LOG) console.log(`Adding sample ${tagString} on user request at ${currentTime.format()} with currentPing ${currentPing.format()}`);
                      addSample(currentPing, tagString);
                  }
              };
@@ -57,6 +59,7 @@
              // Auto-record "afk" when no answer.
              useEffect(() => {
                  if (currentPing && currentTime > currentPing.add(AFK, 'seconds')) {
+                     if (LOG) console.log(`Auto-recording AFK at currentTime ${currentTime.format()} due to currentPing ${currentPing.format()}`);
                      addSample(currentPing, 'afk');
                  }
              }, [currentTime, currentPing]);
@@ -140,12 +143,18 @@
              });
              const setNextPing = (prevSample, currentTime) => {
                  if (! notifyAllowed) {
+                     if (LOG) console.log(`Notify disallowed. Setting null ping time.`);
                      setPingTime(null);
+                     return;
                  }
 
                  let samplesToAdd = [prevSample];
+                 if (LOG) console.log(`Getting next ping while adding prevSample
+                 ${prevSample.time.format()},${prevSample.tag} at currentTime ${currentTime.format()} with currentPing ${currentPing && currentPing.format()}`);
                  let nextPing = prevSample.time.add(rexp(), 'seconds');
+                 if (LOG) console.log(`Attempting nextPing ${nextPing.format()} at currentTime ${currentTime.format()}`);
                  while (nextPing < currentTime.add(1, 'seconds')) {
+                     if (LOG) console.log(`Tried nextPing ${nextPing.format()} in the past, at currentTime ${currentTime.format()}`);
                      // If the next ping is still in the past, add another
                      // missed ping.
                      //
@@ -163,8 +172,10 @@
                      } else if (prevSample.tag === 'afk') {
                          nextTag = 'afk';
                      }
+                     if (LOG) console.log(`Thanks to prevSample ${prevSample.tag}, adding a ${nextTag} sample.`);
                      samplesToAdd.push(Sample(nextPing, nextTag, LAMBDA));
                      nextPing = nextPing.add(rexp(), 'seconds');
+                     if (LOG) console.log(`Attempting nextPing ${nextPing.format()} instead`);
                  }
                  addSamples(samplesToAdd);
                  // Once we're out of the loop, we have arrived at a future
@@ -182,6 +193,7 @@
                      setCurrentTime(dayjs());
                      if (notifyAllowed && ! pingTime) {
                          // Make sure we have a ping time when running.
+                         if (LOG) console.log(`Notify allowed but missing pingTime. Attempting setting a new one.`);
                          setNextPing(Sample(dayjs(), null, LAMBDA), dayjs());
                      } else if (pingTime && pingTime.add(2*AFK, 'seconds') < currentTime) {
                          // If ping time is more than twice AFK in the past,
@@ -189,6 +201,7 @@
                          // states may be translated into "afk" on aggressive
                          // development settings, but it should be rare in
                          // real usage – also I can't think of a way to avoid it.
+                         if (LOG) console.log(`Adding an OFF sample due to pingTime ${pingTime.format()} and currentTime ${currentTime.format()}.`);
                          setNextPing(Sample(pingTime, 'off', LAMBDA), dayjs());
                      }
                  }, 1000/REFRESH_RATE);
@@ -224,8 +237,10 @@
              const addSamples = samples => {
                  // NOTE: Intentionally inefficient to be correct before the
                  // obvious optimisations are performed.
+                 if (LOG) console.log(`Received list of ${samples.length} samples.`);
                  for (const sample of samples) {
                      if (sample.tag) {
+                         if (LOG) console.log(`Pushing sample with tag ${sample.tag}.`);
                          const moreSamples = getSamples().push(sample);
                          window.localStorage.setItem('fr_samples', JSON.stringify(moreSamples));
                          setSamples(moreSamples);
@@ -291,7 +306,7 @@
              // We need to allow the ping to be active a little while after the
              // AFK expiration, to give the form a chance to auto-submit AFK.
              const currentlyEarly = pingTime > currentTime;
-             const currentlyLate = pingTime.add(AFK*1.5, 'seconds') < currentTime;
+             const currentlyLate = pingTime && pingTime.add(AFK*1.5, 'seconds') < currentTime;
              const currentPing = currentlyEarly || currentlyLate ? null : pingTime;
              const [pingNotification, setPingNotification] = useState(null);
              useEffect(() => {
