@@ -60,7 +60,7 @@
              useEffect(() => {
                  // Find the relevant samples to show.
                  const isInactive = s => s.tag.match(/^(off|afk)$/);
-                 const isOld = s => dayjs(s.time).add(7, 'days') < dayjs();
+                 const isOld = s => dayjs(s.time).add(14, 'days') < dayjs();
                  const nonInactive =
                      samples.filter(s => ! isInactive(s) && ! isOld(s))
                             .sortBy(s => s.tag);
@@ -138,7 +138,7 @@
 
              // Render application contents.
              return h('main', null, [
-                 h('p', null, 'Displaying last 7 days'),
+                 h('p', null, 'Displaying last 14 days'),
                  h(FlameGraph, { samples }),
                  h(ShowHistory, { samples })
              ]);
