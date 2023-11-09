@@ -95,9 +95,10 @@
 
                      const cv = Math.sqrt(d.data.samples)/d.data.samples;
                      const sd = cv * d.data.value;
+                     const midHours = Math.round(d.data.value/60/60);
                      const lowerHours = Math.round((d.data.value - 1.645*sd)/60/60);
                      const upperHours = Math.round((d.data.value + 1.645*sd)/60/60);
-                     const hourRange = `${lowerHours}–${upperHours} h`;
+                     const hourRange = `${lowerHours}–[${midHours}]–${upperHours} h`;
 
                      const perc = `${Math.round(100*(d.x1 - d.x0))} %`;
                      return `${d.data.name}, ${perc} (${hourRange})`;
