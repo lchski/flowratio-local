@@ -113,7 +113,7 @@ These bugs are apparent.
       flowratio. That said, this is probably a low-prio bug since under
       realistic settings it will rarely happen. (But it does happen all the time
       under development, so it's easy to reproduce!)
-- [ ] When my Windows laptop is closed, FlowRatio can generate both "off" and
+- [x] When my Windows laptop is closed, FlowRatio can generate both "off" and
       "afk" events, sometimes at the same time. Something something modern
       standby and how do I prevent it?
       - This happens also on Linux and I'm now thinking it's not that it does
@@ -124,10 +124,16 @@ These bugs are apparent.
         the OFF wins and the AFK never comes in, and sometimes – and this was
         the clue – the AFK happens instants before the OFF and both are
         submitted – but never the other way around!
+        - This seems to indeed have been the problem. I haven't gotten any
+          double submissions now.
 - [ ] When my Windows laptop is closed, FlowRatio seems to generate an excessive
       amount of pings, on average every 32 minutes. This might not sound far
       from 45 minutes, buuut unless I'm doing statistics wrong, this should
       happen extreemely rarely by accident.
+      - For some reason, this may have been fixed now as well. I'm now
+        consistently getting ping counts within 1–2 standard deviations. Not
+        sure why fixing the above problem fixed this too, or if I'm just been
+        lucky since then.
 
 These bugs are latent.
 
