@@ -3,19 +3,19 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
         <title>FlowRatio Tracker</title>
-        <style>
-         .tagform {
-           height: 10rem;
-         }
-        </style>
+        <link href="main.css" rel="stylesheet" />
     </head>
     <body>
-        <h1>FlowRatio Tracker</h1>
-        <div id="app">Loading (this can take a few seconds the first time)...</div>
-
-        <hr/>
-        <p>Confused? Currently, <a href="https://git.sr.ht/~kqr/flowratio">the readme is
-            the documentation</a>.</p>
+        <header>
+            <h1>FlowRatio Tracker</h1>
+        </header>
+        <main>
+            <div id="app">Loading (this can take a few seconds the first time)...</div>
+        </main>
+        <footer>
+            <p>Confused? Currently, <a href="https://git.sr.ht/~kqr/flowratio">the readme is
+                the documentation</a>.</p>
+        </footer>
 
         <script type="module">
          import { h, render, createContext } from 'https://unpkg.com/preact@latest?module';
@@ -82,123 +82,123 @@
                      h('ul', null, [
                          h('li', null, [
                              h('label', { for: 'timebox' }, ['Time']),
-                             h('input', {
-                                 type: 'text',
-                                 id: 'timebox',
-                                 disabled: true,
-                                 value: currentPing.format(),
-                             }, []),
-                         ]),
-                         h('li', null, [
-                             h('label', { for: 'tagbox' }, ['Tag']),
-                             h('input', {
-                                 type: 'text',
-                                 id: 'tagbox',
-                                 ref: tagInput,
-                                 value: tagString,
-                                 onInput: ev => setTagString(ev.target.value),
-                                 onFocus: handleFocus,
-                             }, [ ]),
-                         ]),
-                         h('li', null, [
-                             h('button', { type: 'submit'  }, ['Enter'])
-                         ]),
-                     ])
-                 ]);
-             }
-         }
-
-         function RecentSamples({ samples, updateTagString }) {
-             return h('div', null, [
-                 h('p', null, [ 'Last 10 samples:' ]),
-                 h('ul', null, [
-                     ...samples.reverse().take(10).map((s, idx) => h('li', null, [
-                         dayjs(s.time).format(),
-                         h('input', {
-                             type: 'text',
-                             value: s.tag,
-                             onInput: ev => updateTagString(ev.target.value, idx),
-                         }),
-                     ]))
-                 ])
-             ]);
-         }
-
-         function App() {
-
-             // Manage notification permissions.
-             const [notifyPermission, setNotifyPermission] =
-                 useState(window.Notification.permission);
-             const notifyAllowed = notifyPermission === 'granted';
-             const requestNotifyPermission = () => {
-                 window.Notification.requestPermission()
-                       .then(p => setNotifyPermission(p));
-             };
-
-
-             // Manage next ping time.
-             const [pingTime, setPingTime] = useState(() => {
-                 const next = window.localStorage.getItem('fr_nextping');
-                 return next ? dayjs(next) : null;
-             });
-             const setNextPing = (prevSample, currentTime) => {
-                 if (! notifyAllowed) {
-                     if (LOG) console.log(`Notify disallowed. Setting null ping time.`);
-                     setPingTime(null);
-                     return;
-                 }
-
-                 let samplesToAdd = [prevSample];
-                 if (LOG) console.log(`Getting next ping while adding prevSample
-                 ${prevSample.time.format()},${prevSample.tag} at currentTime ${currentTime.format()} with currentPing ${currentPing && currentPing.format()}`);
-                 let nextPing = prevSample.time.add(rexp(), 'seconds');
-                 if (LOG) console.log(`Attempting nextPing ${nextPing.format()} at currentTime ${currentTime.format()}`);
-                 while (nextPing < currentTime.add(1, 'seconds')) {
-                     if (LOG) console.log(`Tried nextPing ${nextPing.format()} in the past, at currentTime ${currentTime.format()}`);
-                     // If the next ping is still in the past, add another
-                     // missed ping.
-                     //
-                     // NOTE: Doing this in a loop is a very crude and
-                     // inefficient implementation. If the user starts
-                     // flowratio again after some months have passed
-                     // it will spin and generate a lot of pings.
-                     //
-                     // It would be neater  to record T/t pings being
-                     // missed, where T is time passed and t is time
-                     // implied by lambda.
-                     let nextTag = 'flowratio';
-                     if (prevSample.tag === 'off') {
-                         nextTag = 'off';
-                     } else if (prevSample.tag === 'afk') {
-                         nextTag = 'afk';
+                                     h('input', {
+                                         type: 'text',
+                                         id: 'timebox',
+                                         disabled: true,
+                                         value: currentPing.format(),
+                                     }, []),
+                                 ]),
+                                 h('li', null, [
+                                     h('label', { for: 'tagbox' }, ['Tag']),
+                                     h('input', {
+                                         type: 'text',
+                                         id: 'tagbox',
+                                         ref: tagInput,
+                                         value: tagString,
+                                         onInput: ev => setTagString(ev.target.value),
+                                         onFocus: handleFocus,
+                                     }, [ ]),
+                                 ]),
+                                 h('li', null, [
+                                     h('button', { type: 'submit'  }, ['Enter'])
+                                 ]),
+                             ])
+                         ]);
                      }
-                     if (LOG) console.log(`Thanks to prevSample ${prevSample.tag}, adding a ${nextTag} sample.`);
-                     samplesToAdd.push(Sample(nextPing, nextTag, LAMBDA));
-                     nextPing = nextPing.add(rexp(), 'seconds');
-                     if (LOG) console.log(`Attempting nextPing ${nextPing.format()} instead`);
                  }
-                 addSamples(samplesToAdd);
-                 // Once we're out of the loop, we have arrived at a future
-                 // ping.
-                 window.localStorage.setItem('fr_nextping', nextPing.format());
-                 setPingTime(nextPing);
-             }
+
+                 function RecentSamples({ samples, updateTagString }) {
+                     return h('div', { id: 'recent-samples' }, [
+                         h('p', null, [ 'Last 10 samples:' ]),
+                         h('ul', null, [
+                             ...samples.reverse().take(10).map((s, idx) => h('li', null, [
+                                 dayjs(s.time).format(),
+                                 h('input', {
+                                     type: 'text',
+                                     value: s.tag,
+                                     onInput: ev => updateTagString(ev.target.value, idx),
+                                 }),
+                             ]))
+                         ])
+                     ]);
+                 }
+
+                 function App() {
+
+                     // Manage notification permissions.
+                     const [notifyPermission, setNotifyPermission] =
+                         useState(window.Notification.permission);
+                     const notifyAllowed = notifyPermission === 'granted';
+                     const requestNotifyPermission = () => {
+                         window.Notification.requestPermission()
+                               .then(p => setNotifyPermission(p));
+                     };
 
 
-             // Manage current time. This is the only code that should call
-             // dayjs. Everything else should use currentTime.
-             const [currentTime, setCurrentTime] = useState(dayjs());
-             useEffect(() => {
-                 window.setTimeout(() => {
-                     setCurrentTime(dayjs());
-                     if (notifyAllowed && ! pingTime) {
-                         // Make sure we have a ping time when running.
-                         if (LOG) console.log(`Notify allowed but missing pingTime. Attempting setting a new one.`);
-                         setNextPing(Sample(dayjs(), null, LAMBDA), dayjs());
-                     } else if (pingTime && pingTime.add(2*AFK, 'seconds') < currentTime) {
-                         // If ping time is more than twice AFK in the past,
-                         // assume flowratio was off. This means some "off"
-                         // states may be translated into "afk" on aggressive
+                     // Manage next ping time.
+                     const [pingTime, setPingTime] = useState(() => {
+                         const next = window.localStorage.getItem('fr_nextping');
+                         return next ? dayjs(next) : null;
+                     });
+                     const setNextPing = (prevSample, currentTime) => {
+                         if (! notifyAllowed) {
+                             if (LOG) console.log(`Notify disallowed. Setting null ping time.`);
+                             setPingTime(null);
+                             return;
+                         }
+
+                         let samplesToAdd = [prevSample];
+                         if (LOG) console.log(`Getting next ping while adding prevSample
+                 ${prevSample.time.format()},${prevSample.tag} at currentTime ${currentTime.format()} with currentPing ${currentPing && currentPing.format()}`);
+                         let nextPing = prevSample.time.add(rexp(), 'seconds');
+                         if (LOG) console.log(`Attempting nextPing ${nextPing.format()} at currentTime ${currentTime.format()}`);
+                         while (nextPing < currentTime.add(1, 'seconds')) {
+                             if (LOG) console.log(`Tried nextPing ${nextPing.format()} in the past, at currentTime ${currentTime.format()}`);
+                             // If the next ping is still in the past, add another
+                             // missed ping.
+                             //
+                             // NOTE: Doing this in a loop is a very crude and
+                             // inefficient implementation. If the user starts
+                             // flowratio again after some months have passed
+                             // it will spin and generate a lot of pings.
+                             //
+                             // It would be neater  to record T/t pings being
+                             // missed, where T is time passed and t is time
+                             // implied by lambda.
+                             let nextTag = 'flowratio';
+                             if (prevSample.tag === 'off') {
+                                 nextTag = 'off';
+                             } else if (prevSample.tag === 'afk') {
+                                 nextTag = 'afk';
+                             }
+                             if (LOG) console.log(`Thanks to prevSample ${prevSample.tag}, adding a ${nextTag} sample.`);
+                         samplesToAdd.push(Sample(nextPing, nextTag, LAMBDA));
+                         nextPing = nextPing.add(rexp(), 'seconds');
+                         if (LOG) console.log(`Attempting nextPing ${nextPing.format()} instead`);
+                     }
+                     addSamples(samplesToAdd);
+                     // Once we're out of the loop, we have arrived at a future
+                     // ping.
+                     window.localStorage.setItem('fr_nextping', nextPing.format());
+                     setPingTime(nextPing);
+                 }
+
+
+                 // Manage current time. This is the only code that should call
+                 // dayjs. Everything else should use currentTime.
+                 const [currentTime, setCurrentTime] = useState(dayjs());
+                 useEffect(() => {
+                     window.setTimeout(() => {
+                         setCurrentTime(dayjs());
+                         if (notifyAllowed && ! pingTime) {
+                             // Make sure we have a ping time when running.
+                             if (LOG) console.log(`Notify allowed but missing pingTime. Attempting setting a new one.`);
+                             setNextPing(Sample(dayjs(), null, LAMBDA), dayjs());
+                         } else if (pingTime && pingTime.add(2*AFK, 'seconds') < currentTime) {
+                             // If ping time is more than twice AFK in the past,
+                             // assume flowratio was off. This means some "off"
+                             // states may be translated into "afk" on aggressive
                          // development settings, but it should be rare in
                          // real usage – also I can't think of a way to avoid it.
                          if (LOG) console.log(`Adding an OFF sample due to pingTime ${pingTime.format()} and currentTime ${currentTime.format()}.`);
@@ -340,11 +340,13 @@
                      .last()
              });
 
-             const csvAndLog = [
-                 h('p', null, 'CSV: '),
-                 h('button', { onClick: csv.export }, [ 'Export' ]),
-                 h('button', { onClick: csv.import }, [ 'Import' ]),
-                 h(RecentSamples, { samples, updateTagString })
+                     const csvAndLog = [
+                         h('div', {id: 'csv-export'}, [
+                             h('p', null, 'CSV: '),
+                             h('button', { onClick: csv.export }, [ 'Export' ]),
+                             h('button', { onClick: csv.import }, [ 'Import' ]),
+                         ]),
+                         h(RecentSamples, { samples, updateTagString })
              ];
 
              return h('main', null, [

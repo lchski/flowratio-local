@@ -1,0 +1,72 @@
+:root {
+    --black: #000;
+    --gray: #6b6b61;
+    --lightgray: #e0d7c9;
+    --darkbrown: #6e4111;
+    --brown: #9e7140;
+    --lightbrown: #d7b28b;
+    --cream: #fffcf9;
+    --transparentcream: rgba(255, 252, 249, 0.9);
+}
+
+* {
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+}
+
+html {
+    font-family: "Linux Libertine", serif;
+    font-size: 12pt;
+    background-color: var(--cream);
+    line-height: 1.41;
+}
+
+body {
+    margin-left: 1.19rem;
+    margin-right: 1.19rem;
+    margin-top: 0;
+    padding: 0;
+}
+
+header, main, footer {
+    max-width: 24rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+footer {
+    border-top: 1px dashed var(--gray);
+    margin-top: 5rem;
+    padding-top: 1rem;
+}
+
+header h1 {
+    text-align: center;
+}
+
+
+a {
+    color: var(--brown);
+    text-decoration: none;
+    border-bottom: 0.0625rem dotted;
+}
+a:hover, a:focus {
+    color: var(--lightbrown);
+    text-decoration: none;
+    border-bottom: 0.0625rem solid;
+}
+
+#csv-export {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 2rem;
+    align-items: baseline;
+}
+#csv-export * {
+    margin: 0 0 0 1rem;
+}
+
+.tagform {
+    height: 10rem;
+}

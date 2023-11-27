@@ -126,14 +126,28 @@ These bugs are apparent.
         submitted – but never the other way around!
         - This seems to indeed have been the problem. I haven't gotten any
           double submissions now.
-- [ ] When my Windows laptop is closed, FlowRatio seems to generate an excessive
+- [x] When my Windows laptop is closed, FlowRatio seems to generate an excessive
       amount of pings, on average every 32 minutes. This might not sound far
       from 45 minutes, buuut unless I'm doing statistics wrong, this should
       happen extreemely rarely by accident.
       - For some reason, this may have been fixed now as well. I'm now
         consistently getting ping counts within 1–2 standard deviations. Not
         sure why fixing the above problem fixed this too, or if I'm just been
-        lucky since then.
+        lucky since then. It's worked long enough that I'm going to call it
+        fixed for now.
+- [ ] Sometimes during night (when the Windows machine restarts, maybe?) ten
+      tags from during the day are somehow copied onto the most recent off/afk
+      samples. This is relatively easy to correct manually (export, change the
+      tags to off, import again) but it's annoying and confusing!
+
+      My best guess is that it has something to do with the in-line sample
+      editing functionality, that it somehow saves the value of the text inputs
+      on top of the just-generated off pings, when maybe focus automatically
+      moves away from those boxes for some reason?
+
+      It does indicate that I should be more careful about using "unfocus as
+      save" for this sort of thing. Maybe I should add an explicit save button
+      just to rule this out as the cause.
 
 These bugs are latent.
 
