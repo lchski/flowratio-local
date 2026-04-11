@@ -315,7 +315,7 @@
                              const existingKeys = new Set(
                                  getSamples()
                                      .filter(s => s.tag)
-                                     .map(s => `${s.namespace ?? ''}|${s.time.format()}`)
+                                     .map(s => `${s.namespace ?? ''}|${s.time.toISOString()}`)
                                      .toArray()
                              );
 
@@ -330,7 +330,7 @@
 
                              // Keep only records not already present in storage.
                              const newSamples = incoming.filter(s =>
-                                 !existingKeys.has(`${s.namespace ?? ''}|${s.time.format()}`)
+                                 !existingKeys.has(`${s.namespace ?? ''}|${s.time.toISOString()}`)
                              );
                              const duplicateCount = incoming.length - newSamples.length;
 
