@@ -383,7 +383,7 @@
 
              // Determine whether to show an export reminder.
             const daysSinceExport = lastExport ? currentTime.diff(lastExport, 'day') : null;
-            const needsExport = samples.size > 0 && (daysSinceExport === null || daysSinceExport >= 5);
+            const needsExport = samples.size > 0 && (daysSinceExport === null || daysSinceExport >= 2);
 
 
             // Render application contents.
