@@ -1,4 +1,15 @@
-# FlowRatio Tracker
+# FlowRatio Tracker (lchski edition)
+
+This is a fork of [kqr’s excellent FlowRatio](https://git.sr.ht/~kqr/flowratio). The main changes aim to:
+
+- support working across multiple devices through a more robust import / export feature
+- enable offline / disconnected usage (i.e., load all dependencies locally, instead of hotlinking to package managers / CDNs)
+- enable you to set key constants like the sample rate (45 minute average by default)
+- make minor quality of life improvements
+
+The remainder of this doc is the original project README, much more useful for orienting yourself to the why and how. Thanks to Chris for the original!
+
+---
 
 A work sampling based time tracker. That runs in the browser with no additional
 anything. Try it out: https://xkqr.org/flowratio/

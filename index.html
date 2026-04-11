@@ -17,11 +17,14 @@
                 the documentation</a>.</p>
         </footer>
 
+        <script src="vendor/preact.umd.js"></script>
+        <script src="vendor/preact-hooks.umd.js"></script>
+        <script src="vendor/immutable.js"></script>
+        <script src="vendor/dayjs.min.js"></script>
         <script type="module">
-         import { h, render, createContext } from 'https://unpkg.com/preact@latest?module';
-         import { useState, useEffect, useRef } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
-         import { List } from 'https://unpkg.com/immutable@latest?module';
-         import dayjs from 'https://cdn.skypack.dev/dayjs';
+         const { h, render, createContext } = preact;
+         const { useState, useEffect, useRef } = preactHooks;
+         const { List } = Immutable;
 
          const DEV = new URLSearchParams(window.location.search).get('dev') === '1';
          if (DEV) {
