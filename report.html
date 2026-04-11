@@ -107,6 +107,11 @@
                      return `${d.data.name}, ${perc} (${hourRange})`;
                  }
 
+                 // Clear any previous flamegraph before rendering a new one,
+                 // so old SVG elements and their stale tooltip event handlers
+                 // don't conflict with the new render.
+                 d3.select(container.current).selectAll('*').remove();
+
                  // Create flamechart.
                  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
                  const chart = flamegraph()
