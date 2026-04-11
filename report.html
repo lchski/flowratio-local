@@ -107,6 +107,11 @@
                      return `${d.data.name}, ${perc} (${hourRange})`;
                  }
 
+                 // Clear any previous flamegraph before rendering a new one,
+                 // so old SVG elements and their stale tooltip event handlers
+                 // don't conflict with the new render.
+                 d3.select(container.current).selectAll('*').remove();
+
                  // Create flamechart.
                  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
                  const chart = flamegraph()
@@ -137,12 +142,68 @@
 
 
          function App() {
-             const json = JSON.parse(window.localStorage.getItem('fr_samples'));
-             const samples = List(json ?? []).sortBy(s => s.time);
+             const [samples, setSamples] = useState(() => {
+                 const json = JSON.parse(window.localStorage.getItem('fr_samples'));
+                 return List(json ?? []).sortBy(s => s.time);
+             });
+
+             // Adapted from index.html's csv.import. Updates state only (no
+             // localStorage write) so it's safe in both Firefox (where
+             // report.html has its own separate localStorage scope) and Chrome
+             // (where localStorage is shared with index.html).
+             const importCsv = () => {
+                 const input = document.createElement("input");
+                 input.type = "file";
+                 input.accept = '.csv,text/plain';
+                 input.addEventListener('change', ev => {
+                     const reader = new FileReader();
+                     reader.onload = ev => {
+                         const data = ev.target.result;
+                         const rows = data.split('\n');
+
+                         const header = rows.shift();
+                         const hasNamespace = header === 'time,tag,lambda,namespace';
+                         if (!hasNamespace && header !== 'time,tag,lambda') {
+                             window.alert('Did not recognise file format');
+                             return;
+                         }
+
+                         const existingKeys = new Set(
+                             samples
+                                 .filter(s => s.tag)
+                                 .map(s => `${s.namespace ?? ''}|${dayjs(s.time).toISOString()}`)
+                                 .toArray()
+                         );
+
+                         const incoming = rows
+                             .map(raw => {
+                                 const fields = raw.split(',');
+                                 return { time: fields[0], tag: fields[1], lambda: fields[2], namespace: hasNamespace ? (fields[3] || null) : null };
+                             })
+                             .filter(s => s.tag);
+
+                         const newSamples = incoming.filter(s =>
+                             !existingKeys.has(`${s.namespace ?? ''}|${dayjs(s.time).toISOString()}`)
+                         );
+                         const duplicateCount = incoming.length - newSamples.length;
+
+                         setSamples(samples.concat(List(newSamples)).sortBy(s => s.time));
+
+                         const parts = [`Imported ${newSamples.length} new record${newSamples.length !== 1 ? 's' : ''}.`];
+                         if (duplicateCount > 0) {
+                             parts.push(`Skipped ${duplicateCount} duplicate${duplicateCount !== 1 ? 's' : ''} (same namespace and timestamp already in your data).`);
+                         }
+                         window.alert(parts.join(' '));
+                     };
+                     reader.readAsText(ev.target.files[0]);
+                 });
+                 input.dispatchEvent(new MouseEvent("click"));
+             };
 
              // Render application contents.
              return h('main', null, [
                  h('p', null, 'Displaying last 14 days'),
+                 h('p', null, [ h('button', { onClick: importCsv }, ['Load CSV']) ]),
                  h(FlameGraph, { samples }),
                  h(ShowHistory, { samples })
              ]);
