@@ -37,8 +37,8 @@
          const AFK = DEV ? 10 : 60;  // Timeout on pings.
          const REFRESH_RATE = 1;  // Per second.
 
-         const Sample = (time, tag, lambda) => {
-             return { time, tag, lambda };
+         const Sample = (time, tag, lambda, namespace = null) => {
+             return { time, tag, lambda, namespace };
          };
 
          const rexp = () => {
@@ -139,6 +139,16 @@
                      };
 
 
+                     // Manage namespace.
+                     const [namespace, setNamespace] = useState(() => {
+                         return window.localStorage.getItem('fr_namespace') ?? '';
+                     });
+                     const updateNamespace = (ns) => {
+                         window.localStorage.setItem('fr_namespace', ns);
+                         setNamespace(ns);
+                     };
+
+
                      // Manage next ping time.
                      const [pingTime, setPingTime] = useState(() => {
                          const next = window.localStorage.getItem('fr_nextping');
@@ -176,7 +186,7 @@
                                  nextTag = 'afk';
                              }
                              if (LOG) console.log(`Thanks to prevSample ${prevSample.tag}, adding a ${nextTag} sample.`);
-                         samplesToAdd.push(Sample(nextPing, nextTag, LAMBDA));
+                         samplesToAdd.push(Sample(nextPing, nextTag, LAMBDA, namespace));
                          nextPing = nextPing.add(rexp(), 'seconds');
                          if (LOG) console.log(`Attempting nextPing ${nextPing.format()} instead`);
                      }
@@ -197,7 +207,7 @@
                          if (notifyAllowed && ! pingTime) {
                              // Make sure we have a ping time when running.
                              if (LOG) console.log(`Notify allowed but missing pingTime. Attempting setting a new one.`);
-                             setNextPing(Sample(dayjs(), null, LAMBDA), dayjs());
+                             setNextPing(Sample(dayjs(), null, LAMBDA, namespace), dayjs());
                          } else if (pingTime && pingTime.add(2*AFK, 'seconds') < currentTime) {
                              // If ping time is more than twice AFK in the past,
                              // assume flowratio was off. This means some "off"
@@ -205,7 +215,7 @@
                          // development settings, but it should be rare in
                          // real usage – also I can't think of a way to avoid it.
                          if (LOG) console.log(`Adding an OFF sample due to pingTime ${pingTime.format()} and currentTime ${currentTime.format()}.`);
-                         setNextPing(Sample(pingTime, 'off', LAMBDA), dayjs());
+                         setNextPing(Sample(pingTime, 'off', LAMBDA, namespace), dayjs());
                      }
                  }, 1000/REFRESH_RATE);
              }, [currentTime]);
@@ -225,7 +235,7 @@
                  if (! json) {
                      return List([]);
                  } else {
-                     return List(json.map(s => Sample(dayjs(s.time), s.tag, s.lambda)));
+                     return List(json.map(s => Sample(dayjs(s.time), s.tag, s.lambda, s.namespace)));
                  }
              };
              const dropSamples = () => {
@@ -234,7 +244,7 @@
              const [samples, setSamples] = useState(getSamples);
              // This function is starting to look unnecessary...
              const addSample = (time, tag) => {
-                 setNextPing(Sample(time, tag, LAMBDA), currentTime);
+                 setNextPing(Sample(time, tag, LAMBDA, namespace), currentTime);
              };
              // Can be called with samples having null tag, which will be ignored.
              const addSamples = samples => {
@@ -261,10 +271,10 @@
                  export: () => {
                      const csv = getSamples()
                          .sortBy(s => s.time)
-                         .map(s => `${s.time.format()},${s.tag},${s.lambda}`)
+                         .map(s => `${s.time.format()},${s.tag},${s.lambda},${s.namespace ?? ''}`)
                          .join('\n');
                      const filedata = new Blob(
-                         ['time,tag,lambda\n' + csv],
+                         ['time,tag,lambda,namespace\n' + csv],
                          { type: 'text/plain' }
                      );
                      const a = document.createElement('a');
@@ -287,7 +297,9 @@
                          reader.onload = ev => {
                              const data = ev.target.result;
                              const rows = data.split('\n');
-                             if (rows.shift() !== 'time,tag,lambda') {
+                             const header = rows.shift();
+                             const hasNamespace = header === 'time,tag,lambda,namespace';
+                             if (!hasNamespace && header !== 'time,tag,lambda') {
                                  window.alert('Did not recognise file format');
                                  return;
                              }
@@ -295,7 +307,7 @@
                              dropSamples();
                              addSamples(rows.map(raw => {
                                  const fields = raw.split(',');
-                                 return Sample(dayjs(fields[0]), fields[1], fields[2]);
+                                 return Sample(dayjs(fields[0]), fields[1], fields[2], hasNamespace ? (fields[3] || null) : null);
                              }));
                          };
                          reader.readAsText(ev.target.files[0]);
@@ -352,8 +364,20 @@
                          h(RecentSamples, { samples, updateTagString })
              ];
 
+             const namespaceInput = h('div', { id: 'namespace-setting' }, [
+                 h('label', { for: 'namespace' }, ['Namespace']),
+                 h('input', {
+                     type: 'text',
+                     id: 'namespace',
+                     value: namespace,
+                     onInput: ev => updateNamespace(ev.target.value),
+                     placeholder: 'e.g. work-laptop',
+                 }, []),
+             ]);
+
              return h('main', null, [
                  notifyPermission === 'granted' ? sampleForm : requestButton,
+                 namespaceInput,
                  h('p', null, [
                      h('a', { target: '_BLANK', href: 'report.html' }, ['View report']),
                  ]),
