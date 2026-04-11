@@ -304,11 +304,32 @@
                                  return;
                              }
 
-                             dropSamples();
-                             addSamples(rows.map(raw => {
-                                 const fields = raw.split(',');
-                                 return Sample(dayjs(fields[0]), fields[1], fields[2], hasNamespace ? (fields[3] || null) : null);
-                             }));
+                             const existingKeys = new Set(
+                                 getSamples()
+                                     .filter(s => s.tag)
+                                     .map(s => `${s.namespace ?? ''}|${s.time.format()}`)
+                                     .toArray()
+                             );
+
+                             const incoming = rows
+                                 .map(raw => {
+                                     const fields = raw.split(',');
+                                     return Sample(dayjs(fields[0]), fields[1], fields[2], hasNamespace ? (fields[3] || null) : null);
+                                 })
+                                 .filter(s => s.tag);
+
+                             const newSamples = incoming.filter(s =>
+                                 !existingKeys.has(`${s.namespace ?? ''}|${s.time.format()}`)
+                             );
+                             const duplicateCount = incoming.length - newSamples.length;
+
+                             addSamples(newSamples);
+
+                             const parts = [`Imported ${newSamples.length} new record${newSamples.length !== 1 ? 's' : ''}.`];
+                             if (duplicateCount > 0) {
+                                 parts.push(`Skipped ${duplicateCount} duplicate${duplicateCount !== 1 ? 's' : ''} (same namespace and timestamp already in your data).`);
+                             }
+                             window.alert(parts.join(' '));
                          };
                          reader.readAsText(ev.target.files[0]);
                      });
