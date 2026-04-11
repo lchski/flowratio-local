@@ -387,14 +387,11 @@
                      .last()
              });
 
-                     const csvAndLog = [
-                         h('div', {id: 'csv-export'}, [
-                             h('p', null, 'CSV: '),
-                             h('button', { onClick: csv.export }, [ 'Export' ]),
-                             h('button', { onClick: csv.import }, [ 'Import' ]),
-                         ]),
-                         h(RecentSamples, { samples, updateTagString })
-             ];
+                     const csvButtons = h('div', {id: 'csv-export'}, [
+                         h('p', null, 'CSV: '),
+                         h('button', { onClick: csv.export, disabled: !samples.size }, [ 'Export' ]),
+                         h('button', { onClick: csv.import }, [ 'Import' ]),
+                     ]);
 
              const namespaceInput = h('div', { id: 'namespace-setting' }, [
                  h('label', { for: 'namespace' }, ['Namespace']),
@@ -413,7 +410,8 @@
                  h('p', null, [
                      h('a', { target: '_BLANK', href: 'report.html' }, ['View report']),
                  ]),
-                 ...( samples.size ? csvAndLog : [])
+                 csvButtons,
+                ...( samples.size ? [h(RecentSamples, { samples, updateTagString })] : [])
              ]);
          }
 
