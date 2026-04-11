@@ -267,7 +267,14 @@
                      return newSamples;
                  });
              };
-             const csv = {
+             // Manage last export time.
+            const [lastExport, setLastExport] = useState(() => {
+                const stored = window.localStorage.getItem('fr_last_export');
+                return stored ? dayjs(stored) : null;
+            });
+
+
+            const csv = {
                  export: () => {
                      const csv = getSamples()
                          .sortBy(s => s.time)
@@ -287,6 +294,9 @@
                          document.body.removeChild(a);
                          window.URL.revokeObjectURL(url);
                      });
+                     const exportedAt = dayjs();
+                     window.localStorage.setItem('fr_last_export', exportedAt.format());
+                     setLastExport(exportedAt);
                  },
                  // Merges a CSV file into the existing samples, preserving all
                  // current data. Only one file can be imported at a time.
@@ -371,7 +381,12 @@
              }, [currentPing]);
 
 
-             // Render application contents.
+             // Determine whether to show an export reminder.
+            const daysSinceExport = lastExport ? currentTime.diff(lastExport, 'day') : null;
+            const needsExport = samples.size > 0 && (daysSinceExport === null || daysSinceExport >= 5);
+
+
+            // Render application contents.
              const requestButton =
                  notifyPermission === 'denied'
                  ? h('p', null, ['You have blocked notifications. Unblock them in your browser and refresh the page to use this app.'])
@@ -404,12 +419,20 @@
                  }, []),
              ]);
 
+             const exportReminder = needsExport && h('p', { class: 'export-reminder' }, [
+                 daysSinceExport === null
+                     ? "You haven't exported your data yet. "
+                     : `It's been ${daysSinceExport} day${daysSinceExport !== 1 ? 's' : ''} since your last export. `,
+                 h('button', { onClick: csv.export }, ['Export now']),
+             ]);
+
              return h('main', null, [
                  notifyPermission === 'granted' ? sampleForm : requestButton,
                  namespaceInput,
                  h('p', null, [
                      h('a', { target: '_BLANK', href: 'report.html' }, ['View report']),
                  ]),
+                 ...(needsExport ? [exportReminder] : []),
                  csvButtons,
                 ...( samples.size ? [h(RecentSamples, { samples, updateTagString })] : [])
              ]);
@@ -420,6 +443,7 @@
              console.log('Resetting local storage');
              window.localStorage.setItem('fr_samples', JSON.stringify([]));
              window.localStorage.setItem('fr_nextping', '');
+             window.localStorage.setItem('fr_last_export', '');
          }
 
          const appDiv = document.getElementById('app');

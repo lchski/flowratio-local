@@ -67,6 +67,13 @@ a:hover, a:focus {
     margin: 0 0 0 1rem;
 }
 
+.export-reminder {
+    border-left: 2px solid var(--darkbrown);
+    padding-left: 0.5rem;
+    color: var(--darkbrown);
+    margin: 0.5rem 0;
+}
+
 .tagform {
     height: 10rem;
 }
