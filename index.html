@@ -235,7 +235,7 @@
                  if (! json) {
                      return List([]);
                  } else {
-                     return List(json.map(s => Sample(dayjs(s.time), s.tag, s.lambda, s.namespace)));
+                     return List(json.map(s => Sample(dayjs(s.time), s.tag, s.lambda, s.namespace))).sortBy(s => s.time);
                  }
              };
              const dropSamples = () => {
@@ -254,7 +254,7 @@
                  for (const sample of samples) {
                      if (sample.tag) {
                          if (LOG) console.log(`Pushing sample with tag ${sample.tag}.`);
-                         const moreSamples = getSamples().push(sample);
+                         const moreSamples = getSamples().push(sample).sortBy(s => s.time);
                          window.localStorage.setItem('fr_samples', JSON.stringify(moreSamples));
                          setSamples(moreSamples);
                      }

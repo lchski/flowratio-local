@@ -138,7 +138,7 @@
 
          function App() {
              const json = JSON.parse(window.localStorage.getItem('fr_samples'));
-             const samples = List(json ?? []);
+             const samples = List(json ?? []).sortBy(s => s.time);
 
              // Render application contents.
              return h('main', null, [
