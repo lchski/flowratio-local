@@ -171,7 +171,7 @@
                          const existingKeys = new Set(
                              samples
                                  .filter(s => s.tag)
-                                 .map(s => `${s.namespace ?? ''}|${dayjs(s.time).toISOString()}`)
+                                 .map(s => `${s.namespace ?? ''}|${dayjs(s.time).startOf('second').toISOString()}`)
                                  .toArray()
                          );
 
@@ -183,7 +183,7 @@
                              .filter(s => s.tag);
 
                          const newSamples = incoming.filter(s =>
-                             !existingKeys.has(`${s.namespace ?? ''}|${dayjs(s.time).toISOString()}`)
+                             !existingKeys.has(`${s.namespace ?? ''}|${dayjs(s.time).startOf('second').toISOString()}`)
                          );
                          const duplicateCount = incoming.length - newSamples.length;
 
