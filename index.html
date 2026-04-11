@@ -432,7 +432,16 @@
                     disabled: !lambdaEditing,
                 }, []),
                 lambdaEditing
-                    ? h('button', { onClick: () => { updateLambdaMinutes(lambdaMinutes); setLambdaEditing(false); } }, ['Save'])
+                    ? h('button', { onClick: () => {
+                        updateLambdaMinutes(lambdaMinutes);
+                        setLambdaEditing(false);
+                        if (notifyAllowed && pingTime) {
+                            const newLambda = DEV ? 10 : lambdaMinutes * 60;
+                            const nextPing = dayjs().add(rexp(newLambda), 'seconds');
+                            window.localStorage.setItem('fr_nextping', nextPing.format());
+                            setPingTime(nextPing);
+                        }
+                    } }, ['Save'])
                     : h('button', { onClick: () => setLambdaEditing(true) }, ['Edit']),
             ]);
 
