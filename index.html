@@ -8,6 +8,7 @@
     <body>
         <header>
             <h1>FlowRatio Tracker</h1>
+            <p><a href="report.html">View report</a></p>
         </header>
         <main>
             <div id="app">Loading (this can take a few seconds the first time)...</div>
@@ -442,9 +443,6 @@
                  csvButtons,
                  h('h2', { class: 'section-heading' }, ['Settings']),
                  namespaceInput,
-                 h('p', null, [
-                     h('a', { target: '_BLANK', href: 'report.html' }, ['View report']),
-                 ]),
              ]);
          }
 

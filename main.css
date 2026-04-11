@@ -40,7 +40,8 @@ footer {
     padding-top: 1rem;
 }
 
-header h1 {
+header h1,
+header p {
     text-align: center;
 }
 
