@@ -40,7 +40,8 @@ footer {
     padding-top: 1rem;
 }
 
-header h1 {
+header h1,
+header p {
     text-align: center;
 }
 
@@ -76,4 +77,20 @@ a:hover, a:focus {
 
 .tagform {
     height: 10rem;
+}
+
+h2.section-heading {
+    font-size: 0.75rem;
+    font-weight: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray);
+    border-bottom: 1px solid var(--lightgray);
+    padding-bottom: 0.25rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+h2.section-heading:first-child {
+    margin-top: 0;
 }
