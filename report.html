@@ -198,7 +198,7 @@
              // Render application contents.
              return h('main', null, [
                  h('p', null, 'Displaying last 14 days'),
-                 h('p', null, [ h('button', { onClick: importCsv }, ['Import CSV']) ]),
+                 h('p', null, [ h('button', { onClick: importCsv }, ['Load CSV']) ]),
                  h(FlameGraph, { samples }),
                  h(ShowHistory, { samples })
              ]);
