@@ -113,7 +113,6 @@
 
                  function RecentSamples({ samples, updateTagString }) {
                      return h('div', { id: 'recent-samples' }, [
-                         h('p', null, [ 'Last 10 samples:' ]),
                          h('ul', null, [
                              ...samples.reverse().take(10).map((s, idx) => h('li', null, [
                                  dayjs(s.time).format(),
@@ -432,10 +431,16 @@
              ]);
 
              return h('main', null, [
+                 h('h2', { class: 'section-heading' }, ['Log sample']),
                  notifyPermission === 'granted' ? sampleForm : requestButton,
-                ...( samples.size ? [h(RecentSamples, { samples, updateTagString })] : []),
+                 ...(samples.size ? [
+                     h('h2', { class: 'section-heading' }, ['Recent samples']),
+                     h(RecentSamples, { samples, updateTagString }),
+                 ] : []),
+                 h('h2', { class: 'section-heading' }, ['Export / Import']),
                  ...(needsExport ? [exportReminder] : []),
                  csvButtons,
+                 h('h2', { class: 'section-heading' }, ['Settings']),
                  namespaceInput,
                  h('p', null, [
                      h('a', { target: '_BLANK', href: 'report.html' }, ['View report']),
