@@ -34,7 +34,7 @@
          const RESET = new URLSearchParams(window.location.search).get('clear') === '1';
          const LOG =  new URLSearchParams(window.location.search).get('log') === '1';;
 
-         const LAMBDA = DEV ? 10 : 45*60;  // Average number of seconds between pings.
+         const DEFAULT_LAMBDA_MINUTES = 45;  // Default average minutes between pings.
          const AFK = DEV ? 10 : 60;  // Timeout on pings.
          const REFRESH_RATE = 1;  // Per second.
 
@@ -42,10 +42,10 @@
              return { time, tag, lambda, namespace };
          };
 
-         const rexp = () => {
+         const rexp = (lambda) => {
              // This is not strictly uniform in (0,1) but close enough.
              const u = Math.max(Number.EPSILON, Math.random());
-             return -Math.log(u) * LAMBDA;
+             return -Math.log(u) * lambda;
          };
 
          function SampleForm({ currentPing, currentTime, addSample, prevSample }) {
@@ -139,6 +139,18 @@
                      };
 
 
+                     // Manage lambda (average minutes between pings).
+                     const [lambdaMinutes, setLambdaMinutes] = useState(() => {
+                         return Number(window.localStorage.getItem('fr_lambda_minutes') ?? DEFAULT_LAMBDA_MINUTES);
+                     });
+                     const [lambdaEditing, setLambdaEditing] = useState(false);
+                     const updateLambdaMinutes = (minutes) => {
+                         window.localStorage.setItem('fr_lambda_minutes', minutes);
+                         setLambdaMinutes(Number(minutes));
+                     };
+                     const lambda = DEV ? 10 : lambdaMinutes * 60;
+
+
                      // Manage namespace.
                      const [namespace, setNamespace] = useState(() => {
                          return window.localStorage.getItem('fr_namespace') ?? '';
@@ -165,7 +177,7 @@
                          let samplesToAdd = [prevSample];
                          if (LOG) console.log(`Getting next ping while adding prevSample
                  ${prevSample.time.format()},${prevSample.tag} at currentTime ${currentTime.format()} with currentPing ${currentPing && currentPing.format()}`);
-                         let nextPing = prevSample.time.add(rexp(), 'seconds');
+                         let nextPing = prevSample.time.add(rexp(lambda), 'seconds');
                          if (LOG) console.log(`Attempting nextPing ${nextPing.format()} at currentTime ${currentTime.format()}`);
                          while (nextPing < currentTime.add(1, 'seconds')) {
                              if (LOG) console.log(`Tried nextPing ${nextPing.format()} in the past, at currentTime ${currentTime.format()}`);
@@ -187,8 +199,8 @@
                                  nextTag = 'afk';
                              }
                              if (LOG) console.log(`Thanks to prevSample ${prevSample.tag}, adding a ${nextTag} sample.`);
-                         samplesToAdd.push(Sample(nextPing, nextTag, LAMBDA, namespace));
-                         nextPing = nextPing.add(rexp(), 'seconds');
+                         samplesToAdd.push(Sample(nextPing, nextTag, lambda, namespace));
+                         nextPing = nextPing.add(rexp(lambda), 'seconds');
                          if (LOG) console.log(`Attempting nextPing ${nextPing.format()} instead`);
                      }
                      addSamples(samplesToAdd);
@@ -208,7 +220,7 @@
                          if (notifyAllowed && ! pingTime) {
                              // Make sure we have a ping time when running.
                              if (LOG) console.log(`Notify allowed but missing pingTime. Attempting setting a new one.`);
-                             setNextPing(Sample(dayjs(), null, LAMBDA, namespace), dayjs());
+                             setNextPing(Sample(dayjs(), null, lambda, namespace), dayjs());
                          } else if (pingTime && pingTime.add(2*AFK, 'seconds') < currentTime) {
                              // If ping time is more than twice AFK in the past,
                              // assume flowratio was off. This means some "off"
@@ -216,7 +228,7 @@
                          // development settings, but it should be rare in
                          // real usage – also I can't think of a way to avoid it.
                          if (LOG) console.log(`Adding an OFF sample due to pingTime ${pingTime.format()} and currentTime ${currentTime.format()}.`);
-                         setNextPing(Sample(pingTime, 'off', LAMBDA, namespace), dayjs());
+                         setNextPing(Sample(pingTime, 'off', lambda, namespace), dayjs());
                      }
                  }, 1000/REFRESH_RATE);
              }, [currentTime]);
@@ -245,7 +257,7 @@
              const [samples, setSamples] = useState(getSamples);
              // This function is starting to look unnecessary...
              const addSample = (time, tag) => {
-                 setNextPing(Sample(time, tag, LAMBDA, namespace), currentTime);
+                 setNextPing(Sample(time, tag, lambda, namespace), currentTime);
              };
              // Can be called with samples having null tag, which will be ignored.
              const addSamples = samples => {
@@ -409,7 +421,22 @@
                          h('button', { onClick: csv.import }, [ 'Import' ]),
                      ]);
 
-             const namespaceInput = h('div', { id: 'namespace-setting' }, [
+             const lambdaInput = h('div', { id: 'lambda-setting' }, [
+                h('label', { for: 'lambda' }, ['Ping interval (minutes)']),
+                h('input', {
+                    type: 'number',
+                    id: 'lambda',
+                    value: lambdaMinutes,
+                    min: 1,
+                    onInput: lambdaEditing ? ev => setLambdaMinutes(Number(ev.target.value)) : undefined,
+                    disabled: !lambdaEditing,
+                }, []),
+                lambdaEditing
+                    ? h('button', { onClick: () => { updateLambdaMinutes(lambdaMinutes); setLambdaEditing(false); } }, ['Save'])
+                    : h('button', { onClick: () => setLambdaEditing(true) }, ['Edit']),
+            ]);
+
+            const namespaceInput = h('div', { id: 'namespace-setting' }, [
                  h('label', { for: 'namespace' }, ['Namespace']),
                  h('input', {
                      type: 'text',
@@ -442,6 +469,7 @@
                  ...(needsExport ? [exportReminder] : []),
                  csvButtons,
                  h('h2', { class: 'section-heading' }, ['Settings']),
+                 lambdaInput,
                  namespaceInput,
              ]);
          }
