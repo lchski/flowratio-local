@@ -280,7 +280,7 @@
                      const a = document.createElement('a');
                      const url = window.URL.createObjectURL(filedata);
                      a.href = url;
-                     a.download = 'flowratio.csv';
+                     a.download = `flowratio-${namespace}-${dayjs().format('YYYY-MM-DDTHH-mm-ss')}.csv`;
                      document.body.appendChild(a);
                      a.click();
                      setTimeout(() => {
