@@ -5,20 +5,23 @@
         <title>FlowRatio Report</title>
         <style>
         </style>
-        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.css">
+        <link rel="stylesheet" type="text/css" href="vendor/d3-flamegraph.css">
     </head>
     <body>
         <h1>FlowRatio Report</h1>
         <div id="app">Loading (this can take a few seconds the first time)...</div>
         <!-- These are way too fat to import as modules. -->
-        <script type="text/javascript" src="https://d3js.org/d3.v7.js"></script>
-        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph.min.js"></script>
-        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/d3-flame-graph@4.1.3/dist/d3-flamegraph-tooltip.min.js"></script>
+        <script type="text/javascript" src="vendor/d3.v7.js"></script>
+        <script type="text/javascript" src="vendor/d3-flamegraph.min.js"></script>
+        <script type="text/javascript" src="vendor/d3-flamegraph-tooltip.min.js"></script>
+        <script src="vendor/preact.umd.js"></script>
+        <script src="vendor/preact-hooks.umd.js"></script>
+        <script src="vendor/immutable.js"></script>
+        <script src="vendor/dayjs.min.js"></script>
         <script type="module">
-         import { h, render, createContext } from 'https://unpkg.com/preact@latest?module';
-         import { useState, useEffect, useRef } from 'https://unpkg.com/preact@latest/hooks/dist/hooks.module.js?module';
-         import { List } from 'https://unpkg.com/immutable@latest?module';
-         import dayjs from 'https://cdn.skypack.dev/dayjs';
+         const { h, render, createContext } = preact;
+         const { useState, useEffect, useRef } = preactHooks;
+         const { List } = Immutable;
 
          function useWindowWidth() {
              const [windowWidth, setWindowWidth] = useState(window.innerWidth);
