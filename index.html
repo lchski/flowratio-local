@@ -352,10 +352,13 @@
                                  })
                                  .filter(s => s.tag);
 
-                             // Keep only records not already present in storage.
-                             const newSamples = incoming.filter(s =>
-                                 !existingKeys.has(`${s.namespace ?? ''}|${s.time.startOf('second').toISOString()}`)
-                             );
+                             // Keep only records not already present in storage or seen earlier in this batch.
+                             const newSamples = incoming.filter(s => {
+                                 const key = `${s.namespace ?? ''}|${s.time.startOf('second').toISOString()}`;
+                                 if (existingKeys.has(key)) return false;
+                                 existingKeys.add(key);
+                                 return true;
+                             });
                              const duplicateCount = incoming.length - newSamples.length;
 
                              addSamples(newSamples);
