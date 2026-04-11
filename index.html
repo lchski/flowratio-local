@@ -267,7 +267,8 @@
                  for (const sample of samples) {
                      if (sample.tag) {
                          if (LOG) console.log(`Pushing sample with tag ${sample.tag}.`);
-                         const moreSamples = getSamples().push(sample).sortBy(s => s.time);
+                         const normalised = { ...sample, time: sample.time.startOf('second') };
+                         const moreSamples = getSamples().push(normalised).sortBy(s => s.time);
                          window.localStorage.setItem('fr_samples', JSON.stringify(moreSamples));
                          setSamples(moreSamples);
                      }
