@@ -267,7 +267,8 @@
                  for (const sample of samples) {
                      if (sample.tag) {
                          if (LOG) console.log(`Pushing sample with tag ${sample.tag}.`);
-                         const moreSamples = getSamples().push(sample).sortBy(s => s.time);
+                         const normalised = { ...sample, time: sample.time.startOf('second') };
+                         const moreSamples = getSamples().push(normalised).sortBy(s => s.time);
                          window.localStorage.setItem('fr_samples', JSON.stringify(moreSamples));
                          setSamples(moreSamples);
                      }
@@ -291,7 +292,7 @@
                  export: () => {
                      const csv = getSamples()
                          .sortBy(s => s.time)
-                         .map(s => `${s.time.format()},${s.tag},${s.lambda},${s.namespace ?? ''}`)
+                         .map(s => `${s.time.toISOString()},${s.tag},${s.lambda},${s.namespace ?? ''}`)
                          .join('\n');
                      const filedata = new Blob(
                          ['time,tag,lambda,namespace\n' + csv],
@@ -338,7 +339,7 @@
                              const existingKeys = new Set(
                                  getSamples()
                                      .filter(s => s.tag)
-                                     .map(s => `${s.namespace ?? ''}|${s.time.toISOString()}`)
+                                     .map(s => `${s.namespace ?? ''}|${s.time.startOf('second').toISOString()}`)
                                      .toArray()
                              );
 
@@ -347,14 +348,17 @@
                              const incoming = rows
                                  .map(raw => {
                                      const fields = raw.split(',');
-                                     return Sample(dayjs(fields[0]), fields[1], fields[2], hasNamespace ? (fields[3] || null) : null);
+                                     return Sample(dayjs(fields[0]), fields[1], Number(fields[2]), hasNamespace ? (fields[3] || null) : null);
                                  })
                                  .filter(s => s.tag);
 
-                             // Keep only records not already present in storage.
-                             const newSamples = incoming.filter(s =>
-                                 !existingKeys.has(`${s.namespace ?? ''}|${s.time.toISOString()}`)
-                             );
+                             // Keep only records not already present in storage or seen earlier in this batch.
+                             const newSamples = incoming.filter(s => {
+                                 const key = `${s.namespace ?? ''}|${s.time.startOf('second').toISOString()}`;
+                                 if (existingKeys.has(key)) return false;
+                                 existingKeys.add(key);
+                                 return true;
+                             });
                              const duplicateCount = incoming.length - newSamples.length;
 
                              addSamples(newSamples);
