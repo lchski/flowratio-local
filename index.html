@@ -288,6 +288,8 @@
                          window.URL.revokeObjectURL(url);
                      });
                  },
+                 // Merges a CSV file into the existing samples, preserving all
+                 // current data. Only one file can be imported at a time.
                  import: () => {
                      var input = document.createElement("input");
                      input.type = "file";
@@ -297,6 +299,9 @@
                          reader.onload = ev => {
                              const data = ev.target.result;
                              const rows = data.split('\n');
+
+                             // Detect format version from the header row, supporting
+                             // both the current (with namespace) and legacy formats.
                              const header = rows.shift();
                              const hasNamespace = header === 'time,tag,lambda,namespace';
                              if (!hasNamespace && header !== 'time,tag,lambda') {
@@ -304,11 +309,38 @@
                                  return;
                              }
 
-                             dropSamples();
-                             addSamples(rows.map(raw => {
-                                 const fields = raw.split(',');
-                                 return Sample(dayjs(fields[0]), fields[1], fields[2], hasNamespace ? (fields[3] || null) : null);
-                             }));
+                             // Build a lookup of already-stored records, keyed by
+                             // namespace+timestamp, to detect duplicates. Null
+                             // namespace is normalised to '' so it forms a valid key.
+                             const existingKeys = new Set(
+                                 getSamples()
+                                     .filter(s => s.tag)
+                                     .map(s => `${s.namespace ?? ''}|${s.time.toISOString()}`)
+                                     .toArray()
+                             );
+
+                             // Parse all data rows into Sample objects, discarding
+                             // any empty rows (e.g. from a trailing newline).
+                             const incoming = rows
+                                 .map(raw => {
+                                     const fields = raw.split(',');
+                                     return Sample(dayjs(fields[0]), fields[1], fields[2], hasNamespace ? (fields[3] || null) : null);
+                                 })
+                                 .filter(s => s.tag);
+
+                             // Keep only records not already present in storage.
+                             const newSamples = incoming.filter(s =>
+                                 !existingKeys.has(`${s.namespace ?? ''}|${s.time.toISOString()}`)
+                             );
+                             const duplicateCount = incoming.length - newSamples.length;
+
+                             addSamples(newSamples);
+
+                             const parts = [`Imported ${newSamples.length} new record${newSamples.length !== 1 ? 's' : ''}.`];
+                             if (duplicateCount > 0) {
+                                 parts.push(`Skipped ${duplicateCount} duplicate${duplicateCount !== 1 ? 's' : ''} (same namespace and timestamp already in your data).`);
+                             }
+                             window.alert(parts.join(' '));
                          };
                          reader.readAsText(ev.target.files[0]);
                      });
