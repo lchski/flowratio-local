@@ -143,6 +143,7 @@
                      const [namespace, setNamespace] = useState(() => {
                          return window.localStorage.getItem('fr_namespace') ?? '';
                      });
+                     const [namespaceEditing, setNamespaceEditing] = useState(false);
                      const updateNamespace = (ns) => {
                          window.localStorage.setItem('fr_namespace', ns);
                          setNamespace(ns);
@@ -414,9 +415,13 @@
                      type: 'text',
                      id: 'namespace',
                      value: namespace,
-                     onInput: ev => updateNamespace(ev.target.value),
+                     onInput: namespaceEditing ? ev => setNamespace(ev.target.value) : undefined,
+                     disabled: !namespaceEditing,
                      placeholder: 'e.g. work-laptop',
                  }, []),
+                 namespaceEditing
+                     ? h('button', { onClick: () => { updateNamespace(namespace); setNamespaceEditing(false); } }, ['Save'])
+                     : h('button', { onClick: () => setNamespaceEditing(true) }, ['Edit']),
              ]);
 
              const exportReminder = needsExport && h('p', { class: 'export-reminder' }, [
@@ -428,13 +433,13 @@
 
              return h('main', null, [
                  notifyPermission === 'granted' ? sampleForm : requestButton,
+                ...( samples.size ? [h(RecentSamples, { samples, updateTagString })] : []),
+                 ...(needsExport ? [exportReminder] : []),
+                 csvButtons,
                  namespaceInput,
                  h('p', null, [
                      h('a', { target: '_BLANK', href: 'report.html' }, ['View report']),
                  ]),
-                 ...(needsExport ? [exportReminder] : []),
-                 csvButtons,
-                ...( samples.size ? [h(RecentSamples, { samples, updateTagString })] : [])
              ]);
          }
 
