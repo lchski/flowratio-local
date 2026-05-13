@@ -35,7 +35,7 @@
              return windowWidth;
          }
 
-         function FlameGraph({ samples }) {
+         function FlameGraph({ samples, showInactive }) {
              // Recursive method to add a sample to hierarchy.
              const addChild = (node, tags, lambda) => {
                  node.value += +lambda;
@@ -65,7 +65,7 @@
                  const isInactive = s => s.tag.match(/^(off|afk)$/);
                  const isOld = s => dayjs(s.time).add(14, 'days') < dayjs();
                  const nonInactive =
-                     samples.filter(s => ! isInactive(s) && ! isOld(s))
+                     samples.filter(s => (showInactive || ! isInactive(s)) && ! isOld(s))
                             .sortBy(s => s.tag);
 
                  // Build hierarchy from samples.
@@ -122,7 +122,7 @@
                    .datum(data)
                    .call(chart);
 
-             }, [samples]);
+             }, [samples, showInactive]);
 
              return h('div', null, [
                  h('h2', null, ['Flamegraph']),
@@ -131,11 +131,13 @@
              ]);
          }
 
-         function ShowHistory({ samples }) {
+         function ShowHistory({ samples, showInactive }) {
+             const isInactive = s => s.tag.match(/^(off|afk)$/);
+             const visible = showInactive ? samples : samples.filter(s => ! isInactive(s));
              return h('div', null, [
                  h('h2', null, [ 'Log' ]),
                  h('ul', null, [
-                     ...samples.reverse().map(s => h('li', null, [dayjs(s.time).format() + ' ' + s.tag]))
+                     ...visible.reverse().map(s => h('li', null, [dayjs(s.time).format() + ' ' + s.tag]))
                  ])
              ]);
          }
@@ -146,6 +148,7 @@
                  const json = JSON.parse(window.localStorage.getItem('fr_samples'));
                  return List(json ?? []).sortBy(s => s.time);
              });
+             const [showInactive, setShowInactive] = useState(false);
 
              // Adapted from index.html's csv.import. Updates state only (no
              // localStorage write) so it's safe in both Firefox (where
@@ -206,9 +209,16 @@
              // Render application contents.
              return h('main', null, [
                  h('p', null, 'Displaying last 14 days'),
-                 h('p', null, [ h('button', { onClick: importCsv }, ['Load CSV']) ]),
-                 h(FlameGraph, { samples }),
-                 h(ShowHistory, { samples })
+                 h('p', null, [
+                     h('button', { onClick: importCsv }, ['Load CSV']),
+                     ' ',
+                     h('label', null, [
+                         h('input', { type: 'checkbox', checked: showInactive, onChange: e => setShowInactive(e.target.checked) }),
+                         ' Show off / afk entries',
+                     ]),
+                 ]),
+                 h(FlameGraph, { samples, showInactive }),
+                 h(ShowHistory, { samples, showInactive })
              ]);
          }
 
