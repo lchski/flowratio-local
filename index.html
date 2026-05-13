@@ -33,6 +33,7 @@
          }
          const RESET = new URLSearchParams(window.location.search).get('clear') === '1';
          const LOG =  new URLSearchParams(window.location.search).get('log') === '1';;
+         const ENTRIES_LIMIT = parseInt(new URLSearchParams(window.location.search).get('entries')) || 10;
 
          const DEFAULT_LAMBDA_MINUTES = 45;  // Default average minutes between pings.
          const AFK = DEV ? 10 : 60;  // Timeout on pings.
@@ -115,7 +116,7 @@
                  function RecentSamples({ samples, updateTagString }) {
                      return h('div', { id: 'recent-samples' }, [
                          h('ul', null, [
-                             ...samples.reverse().take(10).map((s, idx) => h('li', null, [
+                             ...samples.reverse().take(ENTRIES_LIMIT).map((s, idx) => h('li', null, [
                                  dayjs(s.time).format(),
                                  h('input', {
                                      type: 'text',
