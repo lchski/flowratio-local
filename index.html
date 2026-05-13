@@ -48,7 +48,7 @@
              return -Math.log(u) * lambda;
          };
 
-         function SampleForm({ currentPing, currentTime, addSample, prevSample }) {
+         function SampleForm({ currentPing, currentTime, addSample, prevSample, pingTime }) {
              const [tagString, setTagString] = useState( prevSample?.tag  ?? "" );
 
              // Record sample on submission.
@@ -78,7 +78,7 @@
              };
 
              if (! currentPing) {
-                 return h('div', { class: 'tagform' }, [
+                 return h('div', { class: 'tagform', title: pingTime ? `Next ping: ${pingTime.format()}` : undefined }, [
                      'PENDING'
                  ]);
              } else {
@@ -413,6 +413,7 @@
                  currentPing,
                  currentTime,
                  addSample,
+                 pingTime,
                  prevSample: samples
                      .filter(s => s.tag !== 'off' && s.tag !== 'afk' &&
                                s.tag !== 'flowratio')
