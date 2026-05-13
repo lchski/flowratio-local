@@ -35,7 +35,7 @@
              return windowWidth;
          }
 
-         function FlameGraph({ samples, showInactive }) {
+         function FlameGraph({ samples, showInactive, onSelect }) {
              // Recursive method to add a sample to hierarchy.
              const addChild = (node, tags, lambda) => {
                  node.value += +lambda;
@@ -116,26 +116,34 @@
                  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
                  const chart = flamegraph()
                      .width(Math.min(windowWidth-4*rem, 80*rem))
-                     .tooltip(flamegraph.tooltip.defaultFlamegraphTooltip().text(tooltipString));
+                     .tooltip(flamegraph.tooltip.defaultFlamegraphTooltip().text(tooltipString))
+                     .onClick(d => {
+                         // Reconstruct full colon-separated tag path by walking ancestors
+                         // from root to node, skipping the synthetic 'active' root.
+                         const parts = d.ancestors().reverse().slice(1).map(n => n.data.name);
+                         onSelect(parts.length > 0 ? parts.join(':') : null);
+                     });
 
                  d3.select(container.current)
                    .datum(data)
                    .call(chart);
 
-             }, [samples, showInactive]);
+             }, [samples, showInactive, onSelect]);
 
              return h('div', null, [
                  h('h2', null, ['Flamegraph']),
                  h('div', { ref: container}),
-                 h('p', null, ['(hover for details, click to zoom)']),
+                 h('p', null, ['(hover for details, click to zoom/filter log)']),
              ]);
          }
 
-         function ShowHistory({ samples, showInactive }) {
+         function ShowHistory({ samples, showInactive, tagFilter }) {
              const isInactive = s => s.tag.match(/^(off|afk)$/);
-             const visible = showInactive ? samples : samples.filter(s => ! isInactive(s));
+             const matchesFilter = s => tagFilter === null || s.tag === tagFilter || s.tag.startsWith(tagFilter + ':');
+             const visible = samples.filter(s => (showInactive || ! isInactive(s)) && matchesFilter(s));
+             const heading = tagFilter ? `Log (filtered: ${tagFilter})` : 'Log';
              return h('div', null, [
-                 h('h2', null, [ 'Log' ]),
+                 h('h2', null, [ heading ]),
                  h('ul', null, [
                      ...visible.reverse().map(s => h('li', null, [dayjs(s.time).format() + ' ' + s.tag]))
                  ])
@@ -149,6 +157,7 @@
                  return List(json ?? []).sortBy(s => s.time);
              });
              const [showInactive, setShowInactive] = useState(false);
+             const [tagFilter, setTagFilter] = useState(null);
 
              // Adapted from index.html's csv.import. Updates state only (no
              // localStorage write) so it's safe in both Firefox (where
@@ -217,8 +226,8 @@
                          ' Show off / afk entries',
                      ]),
                  ]),
-                 h(FlameGraph, { samples, showInactive }),
-                 h(ShowHistory, { samples, showInactive })
+                 h(FlameGraph, { samples, showInactive, onSelect: setTagFilter }),
+                 h(ShowHistory, { samples, showInactive, tagFilter })
              ]);
          }
 
