@@ -49,8 +49,56 @@
              return -Math.log(u) * lambda;
          };
 
-         function SampleForm({ currentPing, currentTime, addSample, prevSample, pingTime }) {
-             const [tagString, setTagString] = useState( prevSample?.tag  ?? "" );
+         function buildTagHierarchy(samples) {
+             const counts = {};
+             for (const s of samples) {
+                 if (!s.tag || ['off', 'afk', 'flowratio'].includes(s.tag)) continue;
+                 const parts = s.tag.split(':');
+                 const cat = parts[0];
+                 const tag = parts.length > 1 ? parts[1] : null;
+                 if (!counts[cat]) counts[cat] = {};
+                 const key = tag ?? '';
+                 counts[cat][key] = (counts[cat][key] || 0) + 1;
+             }
+             return Object.entries(counts)
+                 .map(([category, tagCounts]) => {
+                     const total = Object.values(tagCounts).reduce((a, b) => a + b, 0);
+                     const tags = Object.entries(tagCounts)
+                         .filter(([t]) => t !== '')
+                         .sort(([, a], [, b]) => b - a)
+                         .map(([tag, count]) => ({ tag, count }));
+                     return { category, total, tags };
+                 })
+                 .sort((a, b) => b.total - a.total);
+         }
+
+         function TagBrowser({ samples, setTagString }) {
+             const hierarchy = buildTagHierarchy(samples);
+             if (!hierarchy.length) return null;
+             return h('div', { id: 'tag-browser' }, [
+                 h('ul', null, hierarchy.map(({ category, total, tags }) =>
+                     h('li', null, [
+                         h('button', {
+                             class: 'tag-autofill',
+                             type: 'button',
+                             title: `${total} sample${total !== 1 ? 's' : ''}`,
+                             onClick: () => setTagString(category),
+                         }, [category]),
+                         ...(tags.length ? [': ', ...tags.flatMap(({ tag, count }, i) => {
+                             const btn = h('button', {
+                                 class: 'tag-autofill',
+                                 type: 'button',
+                                 title: `${count} sample${count !== 1 ? 's' : ''}`,
+                                 onClick: () => setTagString(`${category}:${tag}`),
+                             }, [tag]);
+                             return i > 0 ? [' · ', btn] : [btn];
+                         })] : [])
+                     ])
+                 )
+             ]);
+         }
+
+         function SampleForm({ currentPing, currentTime, addSample, pingTime, tagString, setTagString }) {
 
              // Record sample on submission.
              const handleSubmit = (event, tagString) => {
@@ -256,6 +304,10 @@
                  window.localStorage.setItem('fr_samples', null);
              }
              const [samples, setSamples] = useState(getSamples);
+             const prevSampleForForm = samples
+                 .filter(s => s.tag !== 'off' && s.tag !== 'afk' && s.tag !== 'flowratio')
+                 .last();
+             const [tagString, setTagString] = useState(prevSampleForForm?.tag ?? '');
              // This function is starting to look unnecessary...
              const addSample = (time, tag) => {
                  setNextPing(Sample(time, tag, lambda, namespace), currentTime);
@@ -415,10 +467,8 @@
                  currentTime,
                  addSample,
                  pingTime,
-                 prevSample: samples
-                     .filter(s => s.tag !== 'off' && s.tag !== 'afk' &&
-                               s.tag !== 'flowratio')
-                     .last()
+                 tagString,
+                 setTagString,
              });
 
                      const csvButtons = h('div', {id: 'csv-export'}, [
@@ -476,6 +526,10 @@
              return h('main', null, [
                  h('h2', { class: 'section-heading' }, ['Log sample']),
                  notifyPermission === 'granted' ? sampleForm : requestButton,
+                 ...(samples.size ? [
+                     h('h2', { class: 'section-heading' }, ['Categories & tags']),
+                     h(TagBrowser, { samples, setTagString }),
+                 ] : []),
                  ...(samples.size ? [
                      h('h2', { class: 'section-heading' }, ['Recent samples']),
                      h(RecentSamples, { samples, updateTagString }),
